@@ -52,6 +52,8 @@ public:
 private:
     int32_t number_of_cells;
     
+    bool show_grid_lines = true;
+
     int32_t width = 0;
     int32_t heigth = 0;
     int32_t resolution = 0;

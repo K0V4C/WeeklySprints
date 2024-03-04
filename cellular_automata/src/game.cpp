@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <mutex>
 
+#include "../header/automatons/conways_game_of_life.hpp"
 #include "../header/automatons/elementary_automaton.hpp"
 #include "../header/game.hpp"
 #include "../header/objects.hpp"
@@ -25,6 +26,8 @@ Game::Game() {
 
     this->horizotnal_squares = this->width / this->square_side;
     this->vertical_squares = this->heigth / this->square_side;   
+
+    this->show_grid_lines = true;
 
     G_Objects::input_cells = Grid<Cell>(horizotnal_squares, vertical_squares);
     G_Objects::output_cells = Grid<Cell>(horizotnal_squares, vertical_squares);
@@ -86,6 +89,11 @@ auto Game::handle_events() -> void {
                     this->fps_timer.unpause();
                 }
             }
+            
+            if(e.key.keysym.sym == SDLK_g) {
+                show_grid_lines = !show_grid_lines;
+            }
+
         }
     }
 }
@@ -107,9 +115,17 @@ auto Game::simulate() -> void {
 
 // rendering
 auto Game::render() -> void {    
+    // Draws backgroudn
     G_Objects::g_canvas->draw_background();
+
+    // Draws individual cells
     G_Objects::g_canvas->draw_cells();
-    G_Objects::g_canvas->draw_grid_lines(); 
+
+    // Draws grid lines
+    if(G_Objects::game->show_grid_lines)
+        G_Objects::g_canvas->draw_grid_lines(); 
+
+    // Sends it to graphics card
     G_Objects::g_canvas->present();
 }
 
@@ -140,6 +156,10 @@ auto Game::set_automaton(std::string mode) -> void {
     if( mode.substr(0,4) == "Rule" and mode.size() == 7 ) {
         // Add check in te history
         this->automaton = new Elementary_Automaton(std::atoi(mode.substr(4,7).c_str()));
+    }
+
+    if(mode == std::string("Conways_Game")) {
+        this->automaton = new Conway_GOL();
     }
 }
 

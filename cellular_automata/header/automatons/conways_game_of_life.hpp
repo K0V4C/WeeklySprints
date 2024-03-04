@@ -12,8 +12,10 @@ public:
 
     virtual auto handle_event(SDL_Event& e) -> void override;
     
+    auto change_cell_at_index(int32_t) -> void;
+
+    ~Conway_GOL();
 private: 
-    
 };
 
 

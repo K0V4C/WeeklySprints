@@ -22,13 +22,13 @@ public:
     auto draw_grid_lines() -> void;
     auto draw_cells() -> void;
     auto present() -> void;
- 
+
     ~Canvas();
 
 private:
     
     SDL_Renderer* renderer;
-
+    
     int32_t width = 0;
     int32_t heigth = 0;
 

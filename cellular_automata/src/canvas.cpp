@@ -47,7 +47,7 @@ auto Canvas::draw_cells() -> void {
 
 auto Canvas::draw_grid_lines() -> void {
 
-    RGBA colors = color_palete[1]; // Black 
+    RGBA colors = color_palete[0]; // White 
     SDL_SetRenderDrawColor(renderer, colors.red, colors.green, colors.blue, colors.alpha);
     
     // Draw horizontal lines

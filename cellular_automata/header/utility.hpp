@@ -6,7 +6,7 @@ namespace control {
 };
 
 namespace io {
-    auto input_msg(int argc, char* argv[]) -> void;
+    auto input_msg(int argc, char* argv[]) -> bool;
 };
 
 #endif

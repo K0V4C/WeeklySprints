@@ -8,7 +8,7 @@ namespace control {
 }
 
 namespace io {
-    auto input_msg(int argc, char* argv[]) -> void {
+    auto input_msg(int argc, char* argv[]) -> bool {
         if(argc <= 1) {
 
              std::cout << "\n\n\t=====================================================================================\n\n";
@@ -19,7 +19,7 @@ namespace io {
              std::cout << "\n\n\tTo run the program use ./cellular_automata 20 Conway_Game where 20 is desired resolution\n";
 
              std::cout << "\n\n\t======================================================================================\n\n";
-
+            return false;
          }
 
          if(argc == 2 and argv[1] == std::string("list")) {
@@ -34,8 +34,9 @@ namespace io {
                 std::cout << "\t " << s << std::endl;
 
             std::cout << "\n\n\t=====================================================================================\n\n";
-
+            return false;
          }
 
+        return true;
     }
 }

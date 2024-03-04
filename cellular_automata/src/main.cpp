@@ -6,7 +6,7 @@
 
 int main (int argc, char *argv[]) {
     
-    io::input_msg(argc, argv);
+    if(!io::input_msg(argc, argv)) { return 0; }
 
     // Read input
     auto resolution = std::atoi(argv[1]);

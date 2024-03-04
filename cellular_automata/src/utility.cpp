@@ -30,7 +30,7 @@ namespace io {
             std::cout << "\t a number you want to see for example Rule030.\n\n";
             
             std::cout << "\t List of 2d cellular automatons:\n";
-            for(auto& s :  twoD_simulations)
+            for(auto& s :  simulations)
                 std::cout << "\t " << s << std::endl;
 
             std::cout << "\n\n\t=====================================================================================\n\n";

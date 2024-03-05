@@ -10,6 +10,11 @@ enum class Cell_Type {
         Dead,
         Alive,
         Elementary_Cell,
+        Langton_White,
+        Langton_Black,
+        Conductor, 
+        Electron_Head,
+        Electron_Tail,
         Temp
 };
 
@@ -35,9 +40,25 @@ struct RGBA {
 // define coresponding colors for cell types
 const RGBA cell_colors[] = {
     RGBA(0, 0, 0, 255), // None
+    
+    // Conway
     RGBA(0, 0, 0, 255), // Dead
     RGBA(255, 255, 255, 255), // Alive
+
+    // 1D
     RGBA(255, 255, 255, 255), // Elementary_Cell
+
+    // Langton Ant
+    RGBA(255, 255, 255, 255), // Langton_White
+    RGBA(0, 0, 0, 255), // Langton_Black
+
+    // WireWorld
+    RGBA(255,255,0,255), // Yellow
+    RGBA(0,0,255,255), // Blue 
+    RGBA(255,0,0,255), // Red 
+    // None 
+
+    // Temp
     RGBA(255, 255, 0, 255) // Temp
 };
 
@@ -51,6 +72,8 @@ const RGBA color_palete[] = {
 const std::string simulations[] = {
     "Elementary Automata -> RuleZZZ",
     "Conways_Game",
+    "Langtons_Ant",
+    "WireWorld",
 };
 
 #endif 

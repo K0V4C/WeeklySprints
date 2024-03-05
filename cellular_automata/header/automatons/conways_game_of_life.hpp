@@ -15,7 +15,12 @@ public:
     auto change_cell_at_index(int32_t) -> void;
 
     ~Conway_GOL();
-private: 
+private:
+    
+    Cell_Type pen;
+
+    bool left_mouse_pressed;    
+
 };
 
 

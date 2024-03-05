@@ -6,16 +6,13 @@
 #include <mutex>
 
 Conway_GOL::Conway_GOL() {
-
+    this->pen = Cell_Type::Alive;
+    this->left_mouse_pressed = false;
 }
 
 auto Conway_GOL::change_cell_at_index(int32_t idx) -> void {
     std::scoped_lock<std::mutex> lock(*G_Objects::output_cell_mutex);
-    if(G_Objects::output_cells[idx] == Cell_Type::None or G_Objects::output_cells[idx] == Cell_Type::Dead) {
-        G_Objects::output_cells[idx] = Cell_Type::Alive;
-    } else {
-        G_Objects::output_cells[idx] = Cell_Type::Dead;
-    }
+    G_Objects::output_cells[idx] = pen;
 }
 
 auto Conway_GOL::handle_event(SDL_Event& e) -> void {
@@ -27,11 +24,34 @@ auto Conway_GOL::handle_event(SDL_Event& e) -> void {
     int32_t matrix_index = (x_mouse_pos / G_Objects::game->get_square_side()) +
         (y_mouse_pos / G_Objects::game->get_square_side()) * G_Objects::game->get_horizontal_squares();
 
+    if(e.type == SDL_KEYDOWN) {
+        if(e.key.keysym.sym == SDLK_1) {
+            this->pen = Cell_Type::Dead; 
+        }
+    
+        if(e.key.keysym.sym == SDLK_2) {
+            this->pen = Cell_Type::Alive; 
+        }
+    }
+    
+
+    if(left_mouse_pressed) {
+        change_cell_at_index(matrix_index);
+    }
+
     if(SDL_MOUSEBUTTONDOWN == e.type ) {
         if(SDL_BUTTON_LEFT == e.button.button) {
             change_cell_at_index(matrix_index);
+            left_mouse_pressed = true;
         }
     }
+    
+    if(SDL_MOUSEBUTTONUP == e.type) {
+        if(SDL_BUTTON_LEFT == e.button.button) {
+            left_mouse_pressed = false;
+        }
+    }
+
 }
 
 const std::pair<int32_t,int32_t> directions3x3[] = {

@@ -1,8 +1,5 @@
-#include <iostream>
-
 #include "../header/utility.hpp"
 #include "../header/objects.hpp"
-#include "../header/types.hpp"
 
 int main (int argc, char *argv[]) {
     

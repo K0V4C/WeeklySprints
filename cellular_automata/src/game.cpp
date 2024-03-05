@@ -5,6 +5,8 @@
 
 #include "../header/automatons/conways_game_of_life.hpp"
 #include "../header/automatons/elementary_automaton.hpp"
+#include "../header/automatons/wireworld.hpp"
+#include "../header/automatons/langtons_ant.hpp"
 #include "../header/game.hpp"
 #include "../header/objects.hpp"
 
@@ -154,12 +156,19 @@ auto Game::set_resolution(int32_t res) -> void {
 auto Game::set_automaton(std::string mode) -> void {
 
     if( mode.substr(0,4) == "Rule" and mode.size() == 7 ) {
-        // Add check in te history
         this->automaton = new Elementary_Automaton(std::atoi(mode.substr(4,7).c_str()));
     }
 
     if(mode == std::string("Conways_Game")) {
         this->automaton = new Conway_GOL();
+    }
+
+    if(mode == std::string("Langtons_Ant")) {
+        this->automaton = new Langton_Ant();
+    }
+
+    if(mode == std::string("WireWorld")) {
+        this->automaton = new WireWorld();
     }
 }
 

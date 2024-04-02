@@ -1,5 +1,5 @@
 [package]
-name = "differential_coding"
+name = "huffman_and_differential_coding"
 version = "0.1.0"
 edition = "2021"
 

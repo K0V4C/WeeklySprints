@@ -187,14 +187,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
 
 [[package]]
-name = "differential_coding"
-version = "0.1.0"
-dependencies = [
- "image",
- "sdl2",
-]
-
-[[package]]
 name = "either"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -292,6 +284,14 @@ name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
+
+[[package]]
+name = "huffman_and_differential_coding"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "sdl2",
+]
 
 [[package]]
 name = "image"

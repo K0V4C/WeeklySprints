@@ -4,7 +4,7 @@ use std::{
     thread,
 };
 
-use differential_coding::{
+use huffman_and_differential_coding::{
     generate_coding_table, generate_frequency_table, reciever_thread, sender_thread,
 };
 

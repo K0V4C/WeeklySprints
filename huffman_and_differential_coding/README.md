@@ -15,7 +15,7 @@ option 5.
 
 #### Credits
 
-Images used in this are work from artits:
+Images used in this are work from artists:
 
 pulsar2105
 Pinki

@@ -1,4 +1,6 @@
+use std::io::{BufRead, BufReader};
 use std::{collections::HashMap, fmt::Display, fs};
+use std::fs::File;
 
 #[derive(Debug)]
 pub struct HuffmanNode {
@@ -54,8 +56,8 @@ fn load_table(path: &str) -> Result<HashMap<i32, usize>> {
         let line = x.trim().split(':').collect::<Vec<&str>>();
 
         let (key, freq) = (
-            line[0].parse::<i32>().expect("Cant parse the number!"),
-            line[1].parse::<usize>().expect("Can't parse the number"),
+            line[0].trim().parse::<i32>().expect("Cant parse the number!"),
+            line[1].trim().parse::<usize>().expect("Can't parse the number"),
         );
 
         freq_map.insert(key, freq);
@@ -108,9 +110,38 @@ pub fn generate_coding_table(huffman_code_table: &mut HashMap<i32, String>) -> R
 
     assign_huffman_codes(tree_root, huffman_code_table, "".to_string());
 
-    for x in huffman_code_table {
-        println!("{} === {}", x.0, x.1);
+    // Only uncoment if u want to view encoding values
+    // for x in &mut *huffman_code_table {
+    //     println!("{} === {}", x.0, x.1);
+    // }
+
+    // Calculate density of encoding
+
+    let prob_table = File::open("data/freq_table.txt").expect("Error opening file table");
+    let reader = BufReader::new(prob_table);
+
+    let mut lsr = 0.0;
+    
+    for line in reader.lines().flatten() {
+        
+        let split_line = line.trim().split(':').collect::<Vec<&str>>();
+
+        let (value, _count, prob) = (
+            split_line[0].trim().parse::<i32>().expect("Not a number!"),
+            split_line[1].trim().parse::<i32>().expect("Not a number!"),
+            split_line[2].trim().parse::<f64>().expect("Not a float")
+        );
+
+        let huffman_symbol_len = huffman_code_table.get(&value).expect("Huffman died :(").len();
+
+        lsr += huffman_symbol_len as f64 * prob;
+
     }
+
+    let density = 8 as f64 / lsr;
+
+    println!("Cdoing denisity now is: {}", density);
+
 
     Ok(())
 }

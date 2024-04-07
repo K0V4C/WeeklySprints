@@ -69,9 +69,14 @@ pub fn generate_frequency_table() -> Result<(), std::io::Error> {
 
     println!("Creating frequency table!");
 
+    let total_sum: i64 = reverse_table.iter().map(|&(x,_)| x as i64).sum();
+
     for x in reverse_table {
+
+        let probability: f64 = (x.0 as f64) / total_sum as f64;
+
         data_file
-            .write(format!("{}:{}\n", x.1, x.0).as_bytes())
+            .write(format!("{}:{}:{:.12}\n", x.1, x.0, probability).as_bytes())
             .expect("Error while writing freq table!");
     }
 

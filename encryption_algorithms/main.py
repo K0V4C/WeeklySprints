@@ -26,8 +26,8 @@ def main() -> None:
     key = "SUNCCCCE"
     engine = PlayFair(key=key)
 
-    key = "Kljuc"
-    engine = Vigenere(key=key, autokey=True)
+    # key = "Kljuc"
+    # engine = Vigenere(key=key, autokey=True)
 
 
     test("SA AVALOM PLAVOM U DALJINI KAO BREG", engine=engine)

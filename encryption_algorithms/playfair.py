@@ -77,7 +77,7 @@ class PlayFair(I_Encryption):
     def find_x_y(self, chr: str) -> tuple[int,int]:
 
         if chr == "I" or chr == "J":
-            chr = "I/J"
+            chr = "?"
         for i in range(len(self.cypher)):
             for j in range(len(self.cypher[0])):
                 if chr == self.cypher[i][j]:

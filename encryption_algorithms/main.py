@@ -2,6 +2,7 @@ from i_encryption import I_Encryption
 from cezer_cypher import Cezer_Cypher
 from monoalphabetic import Monoalphabetic
 from playfair import PlayFair
+from vigenere import Vigenere
 
 
 def test(msg: str, engine: I_Encryption):
@@ -25,8 +26,11 @@ def main() -> None:
     key = "SUNCCCCE"
     engine = PlayFair(key=key)
 
+    key = "Kljuc"
+    engine = Vigenere(key=key, autokey=True)
 
-    test("VENI VIDI VICI", engine=engine)
+
+    test("SA AVALOM PLAVOM U DALJINI KAO BREG", engine=engine)
 
 if __name__ == "__main__":
     main()

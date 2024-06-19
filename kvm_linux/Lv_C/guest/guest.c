@@ -107,20 +107,7 @@ static int fclose(const uint64_t FILE) {
 	return 0;
 }
 
-
-void
-__attribute__((noreturn))
-__attribute__((section(".start")))
-_start(void) {
-
-	/*
-		INSERT CODE BELOW THIS LINE
-	*/
-
-	// uint64_t file_id = fopen();
-
-	// outb(console_port, 'k');
-
+void test_1() {
 	uint64_t file_id = fopen("flowers.txt");
 
 	char buffer[256];
@@ -142,6 +129,55 @@ _start(void) {
 
 
 	fclose(file_id);
+}
+
+void test_2() {
+
+	uint64_t simple_img = fopen("color_test.ppm");
+
+	uint64_t header_size = 15;
+
+	char *buffer ="P6\n250 250\n255\n";
+
+	fwrite(simple_img, buffer, header_size);
+
+	for(int r=0; r<253; r++) {
+		for(int b=0; b<255; b++) {
+
+		char single_buffer[3];
+
+
+		// Guards for delimiters used in serialization
+		if(r == '#') {
+			r += 1;
+		}
+
+		if(b == '#') {
+			b += 1;
+		}
+
+		single_buffer[0] = r;
+		single_buffer[1] = 0;
+		single_buffer[2] = b;
+		fwrite(simple_img, single_buffer, 3);
+
+		}
+  	}
+	fclose(simple_img);
+}
+
+void
+__attribute__((noreturn))
+__attribute__((section(".start")))
+_start(void) {
+
+	/*
+		INSERT CODE BELOW THIS LINE
+	*/
+
+	test_1();
+
+	test_2();
 
 	/*
 		INSERT CODE ABOVE THIS LINE

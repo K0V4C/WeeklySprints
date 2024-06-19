@@ -97,6 +97,8 @@ uint64_t File_Controller::get_operation() {
     // Msg shoudl always be 1B#something#something##
     uint64_t op_code = static_cast<uint64_t>(msg_buffer[0]);
 
+    // std::cout << msg_buffer << std::endl;
+
     return op_code;
 }
 
@@ -152,7 +154,7 @@ uint64_t File_Controller::file_open(uint64_t vm_id) {
 
         msg_buffer = "";
 
-        std::string file_name = _file_name + uint64_to_string(vm_id);
+        std::string file_name = uint64_to_string(vm_id) + _file_name;
         if(check_if_local(_file_name)) {
             // If it already exists return it
 
@@ -184,14 +186,14 @@ uint64_t File_Controller::file_open(uint64_t vm_id) {
 
         // If it doenst exist create it
 
-        _file_name += uint64_to_string(vm_id);
+        file_name = uint64_to_string(vm_id) + _file_name;
 
-        FILE* ptr = fopen(_file_name.c_str(), "w+");
+        FILE* ptr = fopen(file_name.c_str(), "w+");
 
-        local_files[_file_name] = ptr;
+        local_files[file_name] = ptr;
         
         uint64_t file_id = next_file_id;
-        local_files_vm_ids[next_file_id++] = _file_name; 
+        local_files_vm_ids[next_file_id++] = file_name; 
 
         return file_id;
 
@@ -314,7 +316,9 @@ void File_Controller::file_write(uint64_t vm_id) {
 
             // If there si already a copy just write to it 
 
-            fprintf(get_local_id(file_id), "%s", data.c_str());
+            for(auto c : data) {
+                fputc((uint8_t)c, get_local_id(file_id));
+            }
 
             return;
 
@@ -333,7 +337,7 @@ void File_Controller::file_write(uint64_t vm_id) {
                 }
             }
 
-            std::string file_name = _file_name + uint64_to_string(vm_id);
+            std::string file_name = uint64_to_string(vm_id) + _file_name;
             
             FILE* new_file = fopen(file_name.c_str(), "w+");
 
@@ -352,7 +356,10 @@ void File_Controller::file_write(uint64_t vm_id) {
             local_files[file_name] = new_file;
 
             fseek(get_local_id(file_id), cursor, SEEK_SET);
-            fprintf(get_local_id(file_id), "%s", data.c_str());
+
+            for(auto c : data) {
+                fputc(c, get_local_id(file_id));
+            }
 
             return ;
         }

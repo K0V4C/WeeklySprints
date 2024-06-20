@@ -166,6 +166,21 @@ void test_2() {
 	fclose(simple_img);
 }
 
+void test_3() {
+
+	uint64_t mul_wr = fopen("multiple_write.txt");
+
+	char *buffer = "PETAK";
+	fwrite(mul_wr, buffer, 5);
+
+	char *buffer2 = " je idealan";
+
+	fwrite(mul_wr, buffer2, 11);
+
+	fclose(mul_wr);
+
+}
+
 void
 __attribute__((noreturn))
 __attribute__((section(".start")))
@@ -178,6 +193,8 @@ _start(void) {
 	test_1();
 
 	test_2();
+
+	test_3(); // Multiple writes
 
 	/*
 		INSERT CODE ABOVE THIS LINE

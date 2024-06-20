@@ -181,6 +181,44 @@ void test_3() {
 
 }
 
+void test_4() {
+
+
+	uint64_t local_file = fopen("local_file_example.txt");
+
+	char* buffer = "This is only a local file!";
+
+	fwrite(local_file, buffer, 26);
+
+	fclose(local_file);
+
+}
+
+void test_5() {
+
+	uint64_t shared_file = fopen("to_duplicate.ppm");
+
+	uint64_t img_copy = fopen("image_copy.ppm");
+
+	uint64_t ss;
+	while(1) {
+
+		char buffer[256];
+		ss = fread(shared_file, buffer, 256);
+
+		if(ss == 0) {
+			break;
+		}
+
+		fwrite(img_copy, buffer, ss);
+
+	}
+
+	fclose(shared_file);
+	fclose(img_copy);
+
+}
+
 void
 __attribute__((noreturn))
 __attribute__((section(".start")))
@@ -190,11 +228,15 @@ _start(void) {
 		INSERT CODE BELOW THIS LINE
 	*/
 
-	test_1();
+	test_1(); // opens a shared file, reads from it to console, and writes something else
 
-	test_2();
+	test_2(); // Generates an image
 
 	test_3(); // Multiple writes
+
+	test_4(); // opens and writes to a local file
+
+	test_5(); // image copy
 
 	/*
 		INSERT CODE ABOVE THIS LINE

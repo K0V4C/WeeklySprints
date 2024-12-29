@@ -68,29 +68,32 @@ impl Head {
         let mut words = self.std_input.split_whitespace();
         words.next(); // Skip the first word
         let remainder: String = words.collect::<Vec<&str>>().join(" ");
+        
 
-        if let Some(first_char) = remainder.chars().next() {
-            if first_char == '"' {
-                // Handle quoted input
-                return Ok(HeadPackage {
-                    option_n: *option_map.get("-n").unwrap(),
-                    arguments: remainder.trim_matches('"').to_owned(),
-                });
-            } else {
-                // Handle file name
-                let file_name = remainder.trim();
-                let file_content = match std::fs::read_to_string(file_name) {
-                    Ok(x) => x,
-                    Err(_) => return Err(CommandError::FileNotFound(file_name.to_owned())),
-                };
-                return Ok(HeadPackage {
-                    option_n: *option_map.get("-n").unwrap(),
-                    arguments: file_content,
-                });
-            }
+        if let None = self.std_input.chars().next() {
+            return Err(CommandError::EmptyString());
         }
+            
+        let first_character = self.std_input.chars().next().unwrap();
 
-        Err(CommandError::EmptyString())
+        if first_character == '"' {
+            // Handle quoted input
+            return Ok(HeadPackage {
+                option_n: *option_map.get("-n").unwrap(),
+                arguments: remainder.trim_matches('"').to_owned(),
+            });
+        } else {
+            // Handle file name
+            let file_name = remainder.trim();
+            let file_content = match std::fs::read_to_string(file_name) {
+                Ok(x) => x,
+                Err(_) => return Err(CommandError::FileNotFound(file_name.to_owned())),
+            };
+            return Ok(HeadPackage {
+                option_n: *option_map.get("-n").unwrap(),
+                arguments: file_content,
+            });
+            }
     }
 }
 

@@ -29,31 +29,34 @@ impl Batch {
 
             options: None
         */
+        
+        if let None = self.std_input.chars().next() {
+            return Err(CommandError::EmptyString());
+        }
+        
+        let first_character = self.std_input.chars().next().unwrap();
 
-        if let Some(first_character) = self.std_input.chars().next() {
-            if first_character == '"' {
-                let ret = self
-                    .std_input
-                    .clone()
-                    .strip_prefix('"')
-                    .and_then(|x| x.strip_suffix('"'))
-                    .unwrap_or(self.std_input.as_str())
-                    .to_owned();
-                return Ok(BatchPackage { arguments: ret });
-            } else {
-                let file_name = self.std_input.trim();
-                let file = std::fs::read_to_string(file_name);
-                match file {
-                    Ok(f) => {
-                        return Ok(BatchPackage { arguments: f });
-                    }
-                    Err(_) => {
-                        return Err(CommandError::FileNotFound(file_name.to_owned()));
-                    }
+        if first_character == '"' {
+            let ret = self
+                .std_input
+                .clone()
+                .strip_prefix('"')
+                .and_then(|x| x.strip_suffix('"'))
+                .unwrap_or(self.std_input.as_str())
+                .to_owned();
+            return Ok(BatchPackage { arguments: ret });
+        } else {
+            let file_name = self.std_input.trim();
+            let file = std::fs::read_to_string(file_name);
+            match file {
+                Ok(f) => {
+                    return Ok(BatchPackage { arguments: f });
+                }
+                Err(_) => {
+                    return Err(CommandError::FileNotFound(file_name.to_owned()));
                 }
             }
         }
-        return Err(CommandError::EmptyString());
     }
 }
 

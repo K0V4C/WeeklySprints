@@ -27,19 +27,21 @@ impl Rm {
 
             > rm filename.ext
 
-        */
-
-        if let Some(first_char) = self.std_input.chars().next() {
-            if first_char == '"' {
-                return Err(CommandError::NotAllowedArguments());
-            } else {
-                return Ok(RmPackage {
-                    filename: self.std_input.trim().to_owned(),
-                });
-            }
+        */ 
+        
+        if let None = self.std_input.chars().next() {
+            return Err(CommandError::EmptyString());
         }
-
-        return Err(CommandError::EmptyString());
+        
+       let first_char = self.std_input.chars().next().unwrap(); 
+        
+        if first_char == '"' {
+            return Err(CommandError::NotAllowedArguments());
+        } else {
+            return Ok(RmPackage {
+                filename: self.std_input.trim().to_owned(),
+            });
+        }
     }
 }
 

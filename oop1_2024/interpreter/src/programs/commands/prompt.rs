@@ -29,25 +29,28 @@ impl Prompt {
 
         */
 
-        if let Some(first_char) = self.std_input.chars().next() {
-            if first_char == '"' {
-                let ret = self.std_input.clone().trim_matches('"').to_owned();
-                return Ok(PromptPackage { arguments: ret });
-            } else {
-                let file_name = self.std_input.trim();
-                let file = std::fs::read_to_string(file_name);
-                match file {
-                    Ok(f) => {
-                        return Ok(PromptPackage { arguments: f });
-                    }
-                    Err(_) => {
-                        return Err(CommandError::FileNotFound(file_name.to_owned()));
-                    }
-                }
-            }
+        // Emprty string error
+        if let None = self.std_input.chars().next() {
+            return Err(CommandError::EmptyString());
         }
 
-        return Err(CommandError::EmptyString());
+        // In case it is a string
+        if self.std_input.chars().next().unwrap() == '"' {
+            let ret = self.std_input.clone().trim_matches('"').to_owned();
+            return Ok(PromptPackage { arguments: ret });
+        }
+
+        // In case it is a file
+        let file_name = self.std_input.trim();
+        let file = std::fs::read_to_string(file_name);
+        match file {
+            Ok(f) => {
+                return Ok(PromptPackage { arguments: f });
+            }
+            Err(_) => {
+                return Err(CommandError::FileNotFound(file_name.to_owned()));
+            }
+        }
     }
 }
 

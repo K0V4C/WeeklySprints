@@ -2,7 +2,7 @@ use core::fmt;
 
 use crate::cli::errors::InterpreterError;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum CommandError {
     Undefined(),
 

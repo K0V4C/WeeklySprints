@@ -74,31 +74,34 @@ impl Wc {
             .replace("-w", "")
             .trim()
             .to_owned();
+        
+        if let None = self.std_input.chars().next() {
+            return Err(CommandError::EmptyString());
+        }
+            
+        let first_character = self.std_input.chars().next().unwrap();
 
-        if let Some(first_character) = self.std_input.chars().next() {
-            if first_character == '"' {
-                let ret = remainder.clone().trim_matches('"').to_owned();
-                return Ok(WcPackage {
-                    option: _selected_option,
-                    arguments: ret,
-                });
-            } else {
-                let file_name = remainder.trim();
-                let file = std::fs::read_to_string(file_name);
-                match file {
-                    Ok(f) => {
-                        return Ok(WcPackage {
-                            option: _selected_option,
-                            arguments: f,
-                        });
-                    }
-                    Err(_) => {
-                        return Err(CommandError::FileNotFound(file_name.to_owned()));
-                    }
+        if first_character == '"' {
+            let ret = remainder.clone().trim_matches('"').to_owned();
+            return Ok(WcPackage {
+                option: _selected_option,
+                arguments: ret,
+            });
+        } else {
+            let file_name = remainder.trim();
+            let file = std::fs::read_to_string(file_name);
+            match file {
+                Ok(f) => {
+                    return Ok(WcPackage {
+                        option: _selected_option,
+                        arguments: f,
+                    });
+                }
+                Err(_) => {
+                    return Err(CommandError::FileNotFound(file_name.to_owned()));
                 }
             }
         }
-        return Err(CommandError::EmptyString());
     }
 }
 

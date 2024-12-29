@@ -84,39 +84,50 @@ impl Interpreter {
     pub fn set_prompt(&mut self, sign: String) {
         self.promt_sign = sign;
     }
-
-    fn print(&self, pipe_to_next: StdOutput, output_file: String, append_file: String) {
-        // Output of CLI LINE
-        match pipe_to_next {
-            Ok(final_value) => {
-                if output_file != "" {
-                    if let Err(x) = std::fs::write(output_file, final_value) {
-                        println!("Writing to file at the end went wrong: {}", x);
-                    }
-                } else if append_file != "" {
-                    match OpenOptions::new()
-                        .write(true)
-                        .append(true)
-                        .open("example.txt")
-                    {
-                        Ok(mut f) => f
-                            .write_all(final_value.as_bytes())
-                            .unwrap_or(println!("Error occured appending to file")),
-
-                        Err(e) => {
-                            println!("Error occured appending to file: {}", e.to_string())
-                        }
-                    }
-                } else {
-                    println!("{}", final_value)
-                }
-            }
-            Err(error) => {
-                println!("{}", error);
-            }
+    
+    fn handle_output(
+        &self,
+        pipe_to_next: StdOutput,
+        output_file: &str,
+        append_file: &str,
+    ) {
+        if let Err(error) = pipe_to_next {
+            println!("{}", error);
+            return;
         }
+    
+        let final_value = pipe_to_next.unwrap();
+    
+        if !output_file.is_empty() {
+            if let Err(err) = std::fs::write(output_file, &final_value) {
+                println!("Writing to file at the end went wrong: {}", err);
+            }
+            return;
+        }
+    
+        if !append_file.is_empty() {
+            if let Err(err) = Interpreter::append_to_file(append_file, &final_value) {
+                println!("Error occurred appending to file: {}", err);
+            }
+            return;
+        }
+    
+        // If neither output nor append file is specified, print to stdout
+        println!("{}", final_value);
     }
-
+    
+    fn append_to_file(file_path: &str, content: &str) -> Result<(), String> {
+        OpenOptions::new()
+            .write(true)
+            .append(true)
+            .open(file_path)
+            .map_err(|e| e.to_string())
+            .and_then(|mut file| {
+                file.write_all(content.as_bytes())
+                    .map_err(|e| e.to_string())
+            })
+    }
+   
     /*
 
         Used by batch cli command
@@ -318,7 +329,7 @@ impl Interpreter {
                 self.operate_over_commands(&command_data, cli_input, &mut pipe_to_next);
             }
             // Output of CLI LINE
-            self.print(pipe_to_next, output_file, append_file);
+            self.handle_output(pipe_to_next, output_file.as_str(), append_file.as_str());
         }
     }
 }

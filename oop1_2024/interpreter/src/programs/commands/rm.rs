@@ -11,7 +11,7 @@ pub struct Rm {
     options: none
 
 */
-impl Rm {    
+impl Rm {
     fn get_input(&self) -> StdInput {
         /*
             Possible inputs are like this:
@@ -58,5 +58,4 @@ impl Interpretable for Rm {
     fn new(input: String) -> Self {
         Rm { std_input: input }
     }
-
 }

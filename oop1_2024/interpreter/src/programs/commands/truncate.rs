@@ -63,5 +63,4 @@ impl Interpretable for Truncate {
     fn new(input: String) -> Self {
         Truncate { std_input: input }
     }
-
 }

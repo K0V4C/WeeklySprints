@@ -122,5 +122,4 @@ impl Interpretable for Wc {
     fn new(input: String) -> Self {
         Wc { std_input: input }
     }
-
 }

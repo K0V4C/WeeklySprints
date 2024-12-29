@@ -64,5 +64,4 @@ impl Interpretable for Echo {
     fn new(input: String) -> Self {
         Echo { std_input: input }
     }
-
 }

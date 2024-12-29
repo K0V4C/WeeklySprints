@@ -1,4 +1,3 @@
-
 use std::collections::HashMap;
 
 use super::super::i_intepretable::{Interpretable, StdInput, StdOutput};
@@ -14,14 +13,13 @@ pub struct Head {
     options: -ncount
 
 */
-impl Head {    
+impl Head {
     fn get_options(&self) -> Result<HashMap<String, String>, CommandError> {
         let mut option_map: HashMap<String, String> = HashMap::new();
         let mut iterator = self.std_input.trim().split_whitespace().into_iter();
 
         while let Some(word) = iterator.next() {
             if word.len() >= 2 && word[0..2] == *"-n" {
-
                 if word[2..].len() == 0 {
                     return Err(CommandError::HeadCountNotGiven());
                 }
@@ -58,20 +56,18 @@ impl Head {
         let remainder: String = words.collect::<Vec<&str>>().join(" ");
 
         if let Some(first_char) = remainder.chars().next() {
-
             if first_char == '"' {
                 // Handle quoted input
                 return Ok(remainder.trim_matches('"').to_owned());
             } else {
                 // Handle file name
                 let file_name = remainder.trim();
-                return std::fs::read_to_string(file_name).map_err(|_| {
-                    CommandError::FileNotFound(file_name.to_owned())
-                });
+                return std::fs::read_to_string(file_name)
+                    .map_err(|_| CommandError::FileNotFound(file_name.to_owned()));
             }
         }
 
-       Err(CommandError::EmptyString())
+        Err(CommandError::EmptyString())
     }
 }
 
@@ -80,26 +76,25 @@ impl Interpretable for Head {
         let input = self.get_input();
         match input {
             Ok(value) => {
-
                 let options = self.get_options()?;
                 let split = value.split('\n').collect::<Vec<&str>>();
 
                 if let Some(num) = options.get("-n") {
-                    // FIX: error handling
-                    let num = num.parse::<usize>().unwrap();
+                    let num = match num.parse::<usize>() {
+                        Ok(x) => x,
+                        Err(_) => return Err(CommandError::HeadCountNumberInvalid()),
+                    };
 
                     if num > split.len() {
                         return Ok(split.join("\n"));
                     } else {
                         let mut ret = String::new();
                         for idx in 0..num {
-                           ret += split[idx];
-                           ret += "\n";
+                            ret += split[idx];
+                            ret += "\n";
                         }
                         return Ok(ret);
                     }
-
-
                 } else {
                     return Err(CommandError::OptionsNotDefined());
                 }
@@ -113,5 +108,4 @@ impl Interpretable for Head {
     fn new(input: String) -> Self {
         Head { std_input: input }
     }
-
 }

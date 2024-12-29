@@ -21,9 +21,10 @@ pub enum CommandError {
     OptionsNotDefined(),
 
     TooManyArguments(),
-    
+
     HeadCountNotGiven(),
     HeadCountTooLarge(),
+    HeadCountNumberInvalid(),
 }
 
 impl fmt::Display for CommandError {
@@ -55,16 +56,19 @@ impl fmt::Display for CommandError {
             }
             Self::OptionsNotDefined() => {
                 write!(f, "Command ecnoutered an error, options were not given")
-            },
+            }
             Self::TooManyArguments() => {
                 write!(f, "Command ecnoutered an error, too many options wer given")
-            },          
+            }
             Self::HeadCountNotGiven() => {
                 write!(f, "Command [Head] ecnoutered an error, count not given")
-            },
+            }
             Self::HeadCountTooLarge() => {
                 write!(f, "Command [Head] ecnoutered an error, count too large")
-            } 
+            }
+            Self::HeadCountNumberInvalid() => {
+                write!(f, "Command [Head] ecnoutered an error, value for count is either too big or not parsable")
+            }
         }
     }
 }
@@ -117,23 +121,29 @@ impl From<CommandError> for InterpreterError {
                     "{}",
                     CommandError::OptionsNotDefined()
                 ))
-            },
+            }
             CommandError::TooManyArguments() => {
                 return InterpreterError::CommandError(format!(
                     "{}",
                     CommandError::TooManyArguments()
                 ))
-            },
+            }
             CommandError::HeadCountNotGiven() => {
                 return InterpreterError::CommandError(format!(
                     "{}",
                     CommandError::HeadCountNotGiven()
                 ))
-            },            
+            }
             CommandError::HeadCountTooLarge() => {
                 return InterpreterError::CommandError(format!(
                     "{}",
                     CommandError::HeadCountTooLarge()
+                ))
+            }
+            CommandError::HeadCountNumberInvalid() => {
+                return InterpreterError::CommandError(format!(
+                    "{}",
+                    CommandError::HeadCountNumberInvalid()
                 ))
             }
         };

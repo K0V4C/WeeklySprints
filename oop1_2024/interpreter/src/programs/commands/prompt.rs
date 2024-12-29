@@ -11,7 +11,7 @@ pub struct Prompt {
     options: none
 
 */
-impl Prompt {    
+impl Prompt {
     fn get_input(&self) -> StdInput {
         /*
             Possible inputs are like this:
@@ -59,5 +59,4 @@ impl Interpretable for Prompt {
     fn new(input: String) -> Self {
         Prompt { std_input: input }
     }
-
 }

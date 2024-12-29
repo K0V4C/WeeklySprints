@@ -23,7 +23,7 @@ pub struct Interpreter {
     promt_sign: String,
     running: bool,
     input_reader: Reader,
-    command_line_queue: Vec<Vec<CommandFormat>>
+    command_line_queue: Vec<Vec<CommandFormat>>,
 }
 
 #[derive(Debug, Clone)]
@@ -57,7 +57,7 @@ impl Interpreter {
             promt_sign: String::from("$"),
             running: true,
             input_reader: reader,
-            command_line_queue: vec![]
+            command_line_queue: vec![],
         }
     }
 
@@ -69,7 +69,7 @@ impl Interpreter {
         > feeding the command queue
         > getting next command line
     */
-    
+
     fn set_promt_ready(&self) {
         print!("{}", self.promt_sign);
         std::io::stdout().flush().unwrap();
@@ -96,16 +96,14 @@ impl Interpreter {
             }
         }
     }
-    
+
     /*
-   
+
         Used by batch cli command to fill it
-    
+
     */
-    pub fn add_to_command_line_queue(&self) {
-        
-    }
-    
+    pub fn add_to_command_line_queue(&self) {}
+
     fn get_next_cli_line(&mut self) -> Result<Vec<CommandFormat>, ReaderError> {
         if let Some(data) = self.command_line_queue.pop() {
             return Ok(data);
@@ -115,14 +113,14 @@ impl Interpreter {
     }
 
     /*
-    
+
         Working place of interpreter [all command functions and operations are under]
-        
+
         > creates command and executes them
         > run body for the main logic of CLI interpreter
-   
+
     */
-    
+
     fn operate_over_commands(
         &mut self,
         command_data: &CommandFormat,
@@ -171,13 +169,13 @@ impl Interpreter {
             "tr" => {
                 let command = Tr::new(cli_input);
                 *pipe_to_next = command.execute(self);
-            },
-            
+            }
+
             "head" => {
                 let command = Head::new(cli_input);
                 *pipe_to_next = command.execute(self);
-            },
-            
+            }
+
             "batch" => {
                 // let command = ::new(cli_input);
                 // *pipe_to_next = command.execute(self);
@@ -187,12 +185,11 @@ impl Interpreter {
             }
         };
     }
-    
-    
+
     /*
-   
+
         Used to figure out what should be next input for command, pipe/argument or < redirection
-    
+
     */
     fn get_input_for_next_command(
         &self,
@@ -231,17 +228,15 @@ impl Interpreter {
         Ok(cli_input)
     }
 
-    
     /*
-   
+
         Main body of the interpreter, rough logic for operations is located here
-   
+
     */
     pub fn run(&mut self) {
         while self.running {
             // Ready up the prompt
             self.set_promt_ready();
-
             // Get input
             let data = match self.get_next_cli_line() {
                 Ok(x) => x,
@@ -250,17 +245,14 @@ impl Interpreter {
                     continue;
                 }
             };
-
             // If someone is pressing enter
             if data.len() == 0 {
                 continue;
             }
-
             // Used to pass to next command
             let mut pipe_to_next: StdOutput = Ok(String::new());
             // Used to rember output file if it exists
             let mut output_file = String::new();
-
             // Iterating through command that has multiple pipes
             for command_data in data {
                 /*
@@ -270,10 +262,6 @@ impl Interpreter {
                     2. Output redirection as not the last pipe
                     3. What if we have a pipe? -> args can exist but only options, input redirection cant exists
                 */
-
-                // Test if reader works correctly
-                // println!("{:?}", command_data);
-
                 let cli_input =
                     match self.get_input_for_next_command(&command_data, pipe_to_next.clone()) {
                         Ok(x) => x,
@@ -282,14 +270,9 @@ impl Interpreter {
                             break;
                         }
                     };
-
-                // Test if we are reading cli correctly
-                // println!("Cli input: {}", cli_input);
-
                 output_file = command_data.out_redirection.clone();
                 self.operate_over_commands(&command_data, cli_input, &mut pipe_to_next);
             }
-
             // Output of CLI LINE
             self.print(pipe_to_next, output_file);
         }

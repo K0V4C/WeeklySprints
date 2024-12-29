@@ -13,7 +13,7 @@ pub struct Time {
     options: none
 
 */
-impl Time {    
+impl Time {
     fn get_input(&self) -> StdInput {
         /*
             Possible inputs are like this:
@@ -45,5 +45,4 @@ impl Interpretable for Time {
     fn new(input: String) -> Self {
         Time { std_input: input }
     }
-
 }

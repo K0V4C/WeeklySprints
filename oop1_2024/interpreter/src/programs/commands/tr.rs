@@ -11,7 +11,7 @@ pub struct Tr {
     options: None
 
 */
-impl Tr {    
+impl Tr {
     fn get_input(&self) -> StdInput {
         /*
             Possible inputs are like this:
@@ -29,16 +29,16 @@ impl Tr {
 
         if has_quotes {
             let ret = self.std_input.clone();
-            
+
             //In case only argjuments were given
             if ret.len() == 1 {
                 return Ok(ret);
             }
-            
-            //Check if only 3 were defined here 
+
+            //Check if only 3 were defined here
             // > if there are 2 ignore second
             // > if there are more then 3 error it
-            
+
             // Temp
             return Ok(ret);
         } else {
@@ -47,21 +47,20 @@ impl Tr {
             let file = std::fs::read_to_string(file_name);
             match file {
                 Ok(f) => {
-
                     // Check if there is 2 elements and if they are there check if they both what with "
                     // In future should check if they are bouth encapuslated in ""
                     // Output is either [arguments]
                     // or
                     //                  [arguments] "what" "with"
-                    
+
                     if split_string.len() == 0 {
                         return Ok(f);
                     }
-                    
-                    //Check if only 3 were defined here 
+
+                    //Check if only 3 were defined here
                     // > if there are 2 ignore second
                     // > if there are more then 3 error it
-                    
+
                     // Temp
                     Ok(f)
                 }
@@ -78,9 +77,9 @@ impl Interpretable for Tr {
         let input = self.get_input();
         match input {
             Ok(value) => {
-               println!("{}", value) ;
+                println!("{}", value);
                 return Ok(value);
-            },
+            }
             Err(error) => {
                 return Err(error);
             }
@@ -90,5 +89,4 @@ impl Interpretable for Tr {
     fn new(input: String) -> Self {
         Tr { std_input: input }
     }
-
 }

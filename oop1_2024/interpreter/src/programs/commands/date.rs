@@ -16,20 +16,20 @@ pub struct Date {
 
 impl Date {
     fn get_input(&self) -> StdInput {
-          /*
-              Possible inputs are like this:
-  
-              > date
-  
-          */
-  
-          // Check for empty string
-          if self.std_input != "" {
-              return Err(CommandError::NotAllowedArguments());
-          }
-  
-          Ok(String::from(""))
-      }
+        /*
+            Possible inputs are like this:
+
+            > date
+
+        */
+
+        // Check for empty string
+        if self.std_input != "" {
+            return Err(CommandError::NotAllowedArguments());
+        }
+
+        Ok(String::from(""))
+    }
 }
 
 impl Interpretable for Date {
@@ -68,6 +68,4 @@ impl Interpretable for Date {
     fn new(input: String) -> Self {
         Date { std_input: input }
     }
-
-  
 }

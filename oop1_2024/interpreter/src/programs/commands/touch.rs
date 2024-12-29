@@ -60,5 +60,4 @@ impl Interpretable for Touch {
     fn new(input: String) -> Self {
         Touch { std_input: input }
     }
-
 }

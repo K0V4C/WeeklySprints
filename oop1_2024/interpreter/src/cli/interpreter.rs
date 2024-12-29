@@ -1,14 +1,18 @@
 use std::io::Write;
 
+use crate::input::errors::ReaderError;
 use crate::input::reader::Reader;
 
 use crate::programs::commands::date::Date;
 use crate::programs::commands::echo::Echo;
+use crate::programs::commands::head::Head;
 use crate::programs::commands::prompt::Prompt;
 use crate::programs::commands::rm::Rm;
 use crate::programs::commands::time::Time;
 use crate::programs::commands::touch::Touch;
+use crate::programs::commands::tr::Tr;
 use crate::programs::commands::truncate::Truncate;
+use crate::programs::commands::wc::Wc;
 use crate::programs::i_intepretable::Interpretable;
 use crate::programs::i_intepretable::StdOutput;
 
@@ -19,6 +23,7 @@ pub struct Interpreter {
     promt_sign: String,
     running: bool,
     input_reader: Reader,
+    command_line_queue: Vec<Vec<CommandFormat>>
 }
 
 #[derive(Debug, Clone)]
@@ -52,9 +57,19 @@ impl Interpreter {
             promt_sign: String::from("$"),
             running: true,
             input_reader: reader,
+            command_line_queue: vec![]
         }
     }
 
+    /*
+        Operations for working with interpreter / direct interaction with interpreter
+        > printing promprt sign
+        > changing promt sign
+        > printing result of command line
+        > feeding the command queue
+        > getting next command line
+    */
+    
     fn set_promt_ready(&self) {
         print!("{}", self.promt_sign);
         std::io::stdout().flush().unwrap();
@@ -81,7 +96,33 @@ impl Interpreter {
             }
         }
     }
+    
+    /*
+   
+        Used by batch cli command to fill it
+    
+    */
+    pub fn add_to_command_line_queue(&self) {
+        
+    }
+    
+    fn get_next_cli_line(&mut self) -> Result<Vec<CommandFormat>, ReaderError> {
+        if let Some(data) = self.command_line_queue.pop() {
+            return Ok(data);
+        } else {
+            return self.input_reader.get_next_input();
+        }
+    }
 
+    /*
+    
+        Working place of interpreter [all command functions and operations are under]
+        
+        > creates command and executes them
+        > run body for the main logic of CLI interpreter
+   
+    */
+    
     fn operate_over_commands(
         &mut self,
         command_data: &CommandFormat,
@@ -92,49 +133,72 @@ impl Interpreter {
             "echo" => {
                 let command = Echo::new(cli_input);
                 *pipe_to_next = command.execute(self);
-            },
+            }
 
             "prompt" => {
                 let command = Prompt::new(cli_input);
                 *pipe_to_next = command.execute(self);
-            },
+            }
 
             "time" => {
                 let command = Time::new(cli_input);
                 *pipe_to_next = command.execute(self);
-            },
+            }
 
             "date" => {
                 let command = Date::new(cli_input);
                 *pipe_to_next = command.execute(self);
-            },
-            
-            "touch" => {                
+            }
+
+            "touch" => {
                 let command = Touch::new(cli_input);
                 *pipe_to_next = command.execute(self);
-            },
-            
-            "rm" => {                
+            }
+
+            "rm" => {
                 let command = Rm::new(cli_input);
                 *pipe_to_next = command.execute(self);
-            },
-            
-            "truncate" => {                
+            }
+
+            "truncate" => {
                 let command = Truncate::new(cli_input);
                 *pipe_to_next = command.execute(self);
+            }
+            "wc" => {
+                let command = Wc::new(cli_input);
+                *pipe_to_next = command.execute(self);
+            }
+            "tr" => {
+                let command = Tr::new(cli_input);
+                *pipe_to_next = command.execute(self);
+            },
+            
+            "head" => {
+                let command = Head::new(cli_input);
+                *pipe_to_next = command.execute(self);
+            },
+            
+            "batch" => {
+                // let command = ::new(cli_input);
+                // *pipe_to_next = command.execute(self);
             }
             _ => {
                 println!("Command name is not correct, try again");
             }
         };
     }
-
+    
+    
+    /*
+   
+        Used to figure out what should be next input for command, pipe/argument or < redirection
+    
+    */
     fn get_input_for_next_command(
         &self,
         command_data: &CommandFormat,
         pipe_to_next: StdOutput,
     ) -> Result<String, InterpreterError> {
-
         // If error occured in last command just error it again
         let pipe_to_next = pipe_to_next?;
 
@@ -167,13 +231,19 @@ impl Interpreter {
         Ok(cli_input)
     }
 
+    
+    /*
+   
+        Main body of the interpreter, rough logic for operations is located here
+   
+    */
     pub fn run(&mut self) {
         while self.running {
             // Ready up the prompt
             self.set_promt_ready();
 
             // Get input
-            let data = match self.input_reader.get_next_input() {
+            let data = match self.get_next_cli_line() {
                 Ok(x) => x,
                 Err(error) => {
                     println!("{}", error);

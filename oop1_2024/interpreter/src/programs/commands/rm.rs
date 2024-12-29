@@ -11,39 +11,13 @@ pub struct Rm {
     options: none
 
 */
-
-impl Interpretable for Rm {
-    fn execute(&self, _: &mut Interpreter) -> StdOutput {
-        let input = self.get_input();
-        match input {
-            Ok(value) => {
-                match std::fs::remove_file(value) {
-                    Ok(_file) => {
-                        return Ok(String::new());},
-                    Err(error)=> {
-                        return Err(CommandError::RmFailedToDeleteFile(error.to_string()));
-                    }
-                };
-            }
-            Err(error) => {
-                return Err(error);
-            }
-        }
-    }
-
-    fn new(input: String) -> Self {
-        Rm { std_input: input }
-    }
-
+impl Rm {    
     fn get_input(&self) -> StdInput {
         /*
             Possible inputs are like this:
 
-            " something something something "
+            > rm filename.ext
 
-            or
-
-            something.txt
         */
 
         // Check for empty string
@@ -59,4 +33,30 @@ impl Interpretable for Rm {
             return Ok(self.std_input.trim().to_owned());
         }
     }
+}
+
+impl Interpretable for Rm {
+    fn execute(&self, _: &mut Interpreter) -> StdOutput {
+        let input = self.get_input();
+        match input {
+            Ok(value) => {
+                match std::fs::remove_file(value) {
+                    Ok(_file) => {
+                        return Ok(String::new());
+                    }
+                    Err(error) => {
+                        return Err(CommandError::RmFailedToDeleteFile(error.to_string()));
+                    }
+                };
+            }
+            Err(error) => {
+                return Err(error);
+            }
+        }
+    }
+
+    fn new(input: String) -> Self {
+        Rm { std_input: input }
+    }
+
 }

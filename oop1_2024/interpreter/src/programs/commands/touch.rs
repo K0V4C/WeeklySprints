@@ -13,39 +13,13 @@ pub struct Touch {
     options: none
 
 */
-
-impl Interpretable for Touch {
-    fn execute(&self, _: &mut Interpreter) -> StdOutput {
-        let input = self.get_input();
-        match input {
-            Ok(value) => {
-                match File::create(value) {
-                    Ok(_file) => {
-                        return Ok(String::new());},
-                    Err(error)=> {
-                        return Err(CommandError::TouchFailedToCreateFile(error.to_string()));
-                    }
-                };
-            }
-            Err(error) => {
-                return Err(error);
-            }
-        }
-    }
-
-    fn new(input: String) -> Self {
-        Touch { std_input: input }
-    }
-
+impl Touch {
     fn get_input(&self) -> StdInput {
         /*
             Possible inputs are like this:
 
-            " something something something "
+            > touch filename.extension
 
-            or
-
-            something.txt
         */
 
         // Check for empty string
@@ -61,4 +35,30 @@ impl Interpretable for Touch {
             return Ok(self.std_input.trim().to_owned());
         }
     }
+}
+
+impl Interpretable for Touch {
+    fn execute(&self, _: &mut Interpreter) -> StdOutput {
+        let input = self.get_input();
+        match input {
+            Ok(value) => {
+                match File::create(value) {
+                    Ok(_file) => {
+                        return Ok(String::new());
+                    }
+                    Err(error) => {
+                        return Err(CommandError::TouchFailedToCreateFile(error.to_string()));
+                    }
+                };
+            }
+            Err(error) => {
+                return Err(error);
+            }
+        }
+    }
+
+    fn new(input: String) -> Self {
+        Touch { std_input: input }
+    }
+
 }

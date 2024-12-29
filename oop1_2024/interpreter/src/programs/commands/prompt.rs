@@ -11,31 +11,13 @@ pub struct Prompt {
     options: none
 
 */
-
-impl Interpretable for Prompt {
-    fn execute(&self, _interpreter: &mut Interpreter)-> StdOutput {
-        match self.get_input() {
-            Ok(s) => {
-                _interpreter.set_prompt(s.clone());
-                return Ok(s);
-            },
-            Err(e) => {return Err(e)}
-        }
-    }
-
-    fn new(input: String) -> Self {
-        Prompt { std_input: input }
-    }
-
+impl Prompt {    
     fn get_input(&self) -> StdInput {
         /*
             Possible inputs are like this:
 
-            " something something something "
+            > prompt "sign"
 
-            or
-
-            something.txt
         */
 
         // Check for empty string
@@ -61,4 +43,21 @@ impl Interpretable for Prompt {
             }
         }
     }
+}
+
+impl Interpretable for Prompt {
+    fn execute(&self, _interpreter: &mut Interpreter) -> StdOutput {
+        match self.get_input() {
+            Ok(s) => {
+                _interpreter.set_prompt(s.clone());
+                return Ok(s);
+            }
+            Err(e) => return Err(e),
+        }
+    }
+
+    fn new(input: String) -> Self {
+        Prompt { std_input: input }
+    }
+
 }

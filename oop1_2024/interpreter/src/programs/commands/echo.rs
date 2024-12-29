@@ -11,24 +11,7 @@ pub struct Echo {
     options: none
 
 */
-
-impl Interpretable for Echo {
-    fn execute(&self, _interpreter: &mut Interpreter) -> StdOutput {
-        let input = self.get_input();
-        match input {
-            Ok(value) => {
-                return Ok(value);
-            }
-            Err(error) => {
-                return Err(error);
-            }
-        }
-    }
-
-    fn new(input: String) -> Self {
-        Echo { std_input: input }
-    }
-
+impl Echo {
     fn get_input(&self) -> StdInput {
         /*
             Possible inputs are like this:
@@ -63,4 +46,23 @@ impl Interpretable for Echo {
             }
         }
     }
+}
+
+impl Interpretable for Echo {
+    fn execute(&self, _interpreter: &mut Interpreter) -> StdOutput {
+        let input = self.get_input();
+        match input {
+            Ok(value) => {
+                return Ok(value);
+            }
+            Err(error) => {
+                return Err(error);
+            }
+        }
+    }
+
+    fn new(input: String) -> Self {
+        Echo { std_input: input }
+    }
+
 }

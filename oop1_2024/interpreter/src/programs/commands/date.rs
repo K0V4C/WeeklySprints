@@ -8,22 +8,40 @@ pub struct Date {
 }
 /*
 
-    prompt [arguments]
+    date
 
     options: none
 
 */
 
+impl Date {
+    fn get_input(&self) -> StdInput {
+          /*
+              Possible inputs are like this:
+  
+              > date
+  
+          */
+  
+          // Check for empty string
+          if self.std_input != "" {
+              return Err(CommandError::NotAllowedArguments());
+          }
+  
+          Ok(String::from(""))
+      }
+}
+
 impl Interpretable for Date {
-    fn execute(&self, _: &mut Interpreter)-> StdOutput {
+    fn execute(&self, _: &mut Interpreter) -> StdOutput {
         match self.get_input() {
             Ok(_) => {
-
                 // Get the current system time
                 let start = SystemTime::now();
 
                 // Get the duration since UNIX_EPOCH
-                let duration_since_epoch = start.duration_since(UNIX_EPOCH)
+                let duration_since_epoch = start
+                    .duration_since(UNIX_EPOCH)
                     .expect("Time went backwards");
 
                 // Get the seconds since UNIX_EPOCH
@@ -42,8 +60,8 @@ impl Interpretable for Date {
 
                 // Return the current date (rough approximation)
                 return Ok(format!("Current date: {}-{:02}-{:02}", year, month, day));
-            },
-            Err(e) => {return Err(e)}
+            }
+            Err(e) => return Err(e),
         }
     }
 
@@ -51,22 +69,5 @@ impl Interpretable for Date {
         Date { std_input: input }
     }
 
-    fn get_input(&self) -> StdInput {
-        /*
-            Possible inputs are like this:
-
-            " something something something "
-
-            or
-
-            something.txt
-        */
-
-        // Check for empty string
-        if self.std_input != "" {
-            return Err(CommandError::NotAllowedArguments());
-        }
-
-        Ok(String::from(""))
-    }
+  
 }

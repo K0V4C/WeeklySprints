@@ -8,49 +8,18 @@ pub struct Truncate {
 }
 /*
 
-    echo filename
+    truncate filename.ext
 
     options: none
 
 */
-
-impl Interpretable for Truncate {
-    fn execute(&self, _: &mut Interpreter) -> StdOutput {
-        let input = self.get_input();
-        match input {
-            Ok(value) => {
-                
-                match metadata(value.clone()) {
-                    Err(_) => {
-                        return Err(CommandError::FileNotFound(value));
-                    },
-                    _ => {}
-                }
-                
-                if let Err(e) = OpenOptions::new().write(true).truncate(true).open(value) {
-                    return Err(CommandError::TruncateFailedToTruncateAFile(e.to_string()));
-                };
-                Ok(String::new())
-            },
-            Err(error) => {
-                return Err(error);
-            }
-        }
-    }
-
-    fn new(input: String) -> Self {
-        Truncate { std_input: input }
-    }
-
+impl Truncate {
     fn get_input(&self) -> StdInput {
         /*
             Possible inputs are like this:
 
-            " something something something "
+            > touch filename.extension
 
-            or
-
-            something.txt
         */
 
         // Check for empty string
@@ -66,4 +35,33 @@ impl Interpretable for Truncate {
             return Ok(self.std_input.trim().to_owned());
         }
     }
+}
+
+impl Interpretable for Truncate {
+    fn execute(&self, _: &mut Interpreter) -> StdOutput {
+        let input = self.get_input();
+        match input {
+            Ok(value) => {
+                match metadata(value.clone()) {
+                    Err(_) => {
+                        return Err(CommandError::FileNotFound(value));
+                    }
+                    _ => {}
+                }
+
+                if let Err(e) = OpenOptions::new().write(true).truncate(true).open(value) {
+                    return Err(CommandError::TruncateFailedToTruncateAFile(e.to_string()));
+                };
+                Ok(String::new())
+            }
+            Err(error) => {
+                return Err(error);
+            }
+        }
+    }
+
+    fn new(input: String) -> Self {
+        Truncate { std_input: input }
+    }
+
 }

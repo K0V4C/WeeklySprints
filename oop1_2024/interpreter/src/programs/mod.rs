@@ -1,4 +1,4 @@
-pub mod i_intepretable;
+pub mod intepretable;
 
 pub mod errors;
 

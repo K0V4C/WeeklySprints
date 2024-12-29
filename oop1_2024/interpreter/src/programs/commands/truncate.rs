@@ -1,9 +1,9 @@
 use std::fs::{metadata, OpenOptions};
 
-use super::super::i_intepretable::{Interpretable, StdOutput};
+use super::super::intepretable::{Interpretable, StdOutput};
 use crate::{
     cli::Interpreter,
-    programs::{errors::CommandError, i_intepretable::StdInput},
+    programs::{errors::CommandError, intepretable::StdInput},
 };
 
 pub struct Truncate {

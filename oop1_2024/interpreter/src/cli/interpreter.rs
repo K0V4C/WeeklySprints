@@ -16,8 +16,8 @@ use crate::programs::commands::touch::Touch;
 use crate::programs::commands::tr::Tr;
 use crate::programs::commands::truncate::Truncate;
 use crate::programs::commands::wc::Wc;
-use crate::programs::i_intepretable::Interpretable;
-use crate::programs::i_intepretable::StdOutput;
+use crate::programs::intepretable::Interpretable;
+use crate::programs::intepretable::StdOutput;
 
 use super::errors::InterpreterError;
 

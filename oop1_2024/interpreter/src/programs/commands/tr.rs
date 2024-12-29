@@ -1,9 +1,9 @@
 use super::{
-    super::i_intepretable::{Interpretable, StdOutput},
+    super::intepretable::{Interpretable, StdOutput},
     utility::get_quoted_strings,
 };
 use crate::{
-    cli::Interpreter, programs::{errors::CommandError, i_intepretable::StdInput}
+    cli::Interpreter, programs::{errors::CommandError, intepretable::StdInput}
 };
 
 pub struct Tr {

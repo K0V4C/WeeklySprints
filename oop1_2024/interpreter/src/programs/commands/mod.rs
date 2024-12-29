@@ -9,3 +9,5 @@ pub mod touch;
 pub mod tr;
 pub mod truncate;
 pub mod wc;
+
+pub mod utility;

@@ -22,6 +22,9 @@ pub enum CommandError {
 
     TooManyArguments(),
 
+    TrTooManyStrings(),
+    TrArgumentsAreNotString(),
+
     HeadCountNotGiven(),
     HeadCountTooLarge(),
     HeadCountNumberInvalid(),
@@ -68,6 +71,18 @@ impl fmt::Display for CommandError {
             }
             Self::HeadCountNumberInvalid() => {
                 write!(f, "Command [Head] ecnoutered an error, value for count is either too big or not parsable")
+            }
+            Self::TrTooManyStrings() => {
+                write!(
+                    f,
+                    "Command [Tr] ecnoutered an error, too many strings were given"
+                )
+            }
+            Self::TrArgumentsAreNotString() => {
+                write!(
+                    f,
+                    "Command [Tr] ecnoutered an error, arguments are not strings"
+                )
             }
         }
     }
@@ -144,6 +159,18 @@ impl From<CommandError> for InterpreterError {
                 return InterpreterError::CommandError(format!(
                     "{}",
                     CommandError::HeadCountNumberInvalid()
+                ))
+            }
+            CommandError::TrTooManyStrings() => {
+                return InterpreterError::CommandError(format!(
+                    "{}",
+                    CommandError::TrTooManyStrings()
+                ))
+            }
+            CommandError::TrArgumentsAreNotString() => {
+                return InterpreterError::CommandError(format!(
+                    "{}",
+                    CommandError::TrArgumentsAreNotString()
                 ))
             }
         };

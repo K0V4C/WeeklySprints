@@ -134,7 +134,7 @@ impl Interpretable for Wc {
                             .to_string());
                     }
                     _ => {
-                        panic!("WC ERROR");
+                        self.std_output = Err(CommandError::Undefined());
                     }
                 };
             }

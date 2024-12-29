@@ -1,6 +1,6 @@
 use std::fmt::{self, Display};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum ReaderError {
     ReadLineError(),
     UndefinedInputRedirection(),

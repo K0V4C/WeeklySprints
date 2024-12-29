@@ -9,6 +9,11 @@ impl Reader {
         Reader
     }
 
+    /*
+
+        Get input from CLI
+
+    */
     fn get_all_text(&self) -> Result<String, ReaderError> {
         let mut quote_count = 0;
         let mut total_output = String::new();
@@ -38,6 +43,11 @@ impl Reader {
         Ok(total_output)
     }
 
+    /*
+
+        Splitting cli line on PIPES
+
+    */
     fn split_on_pipe(&self, text: &String) -> Result<Vec<String>, ReaderError> {
         let mut quotes_open = false;
         let mut split_input: Vec<String> = vec![];
@@ -64,6 +74,11 @@ impl Reader {
         Ok(split_input)
     }
 
+    /*
+
+        Convert Pipe segment to CLI commands
+
+    */
     fn convert_to_commands(
         &self,
         split_text: &Vec<String>,
@@ -115,6 +130,14 @@ impl Reader {
     pub fn get_next_input(&self) -> Result<Vec<CommandFormat>, ReaderError> {
         let text = self.get_all_text()?;
         let split_text = self.split_on_pipe(&text)?;
+        self.convert_to_commands(&split_text)
+    }
+
+    pub fn parse_line_to_commands(
+        &self,
+        cli_line: String,
+    ) -> Result<Vec<CommandFormat>, ReaderError> {
+        let split_text = self.split_on_pipe(&cli_line)?;
         self.convert_to_commands(&split_text)
     }
 }

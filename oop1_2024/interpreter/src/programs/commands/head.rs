@@ -18,8 +18,10 @@ pub struct Head {
 
 */
 
+const MAX_COUNT_NUMBER: u32 = 99999;
+
 struct HeadPackage {
-    option_n: u8,
+    option_n: u32,
     arguments: String,
 }
 
@@ -44,8 +46,13 @@ impl Head {
                     return Err(CommandError::HeadCountNotGiven());
                 }
 
-                let number = match word[2..].parse::<u8>() {
-                    Ok(x) => x,
+                let number = match word[2..].parse::<u32>() {
+                    Ok(x) => {
+                        if x > MAX_COUNT_NUMBER {
+                            return Err(CommandError::HeadCountTooLarge());
+                        }
+                        x
+                    }
                     Err(_) => return Err(CommandError::HeadCountNumberInvalid()),
                 };
 

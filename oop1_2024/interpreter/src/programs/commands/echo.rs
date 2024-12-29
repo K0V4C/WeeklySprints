@@ -1,4 +1,7 @@
-use super::super::i_intepretable::{Interpretable, StdOutput};
+use super::{
+    super::i_intepretable::{Interpretable, StdOutput},
+    utility::get_quoted_strings,
+};
 use crate::{
     cli::Interpreter,
     programs::{errors::CommandError, i_intepretable::StdInput},
@@ -32,26 +35,30 @@ impl Echo {
             something.txt
         */
 
-        // Check for empty string
-        if self.std_input == "" {
+        if  get_quoted_strings(self.std_input.as_str())?.len() > 1 {
             return Err(CommandError::EmptyString());
         }
-
-        let has_quotes = self.std_input.chars().collect::<Vec<char>>()[0] == '"';
-
-        if has_quotes {
+       
+        // Emprty string error
+        if let None = self.std_input.chars().next() {
+            return Err(CommandError::EmptyString());
+        } 
+        
+        // In case it is a string
+        if self.std_input.chars().next().unwrap() == '"' {
             let ret = self.std_input.clone().trim_matches('"').to_owned();
             return Ok(EchoPackage { arguments: ret });
-        } else {
-            let file_name = self.std_input.trim();
-            let file = std::fs::read_to_string(file_name);
-            match file {
-                Ok(f) => {
-                    return Ok(EchoPackage { arguments: f });
-                }
-                Err(_) => {
-                    return Err(CommandError::FileNotFound(file_name.to_owned()));
-                }
+        }
+        
+        // In case it is a file
+        let file_name = self.std_input.trim();
+        let file = std::fs::read_to_string(file_name);
+        match file {
+            Ok(f) => {
+                return Ok(EchoPackage { arguments: f });
+            }
+            Err(_) => {
+                return Err(CommandError::FileNotFound(file_name.to_owned()));
             }
         }
     }

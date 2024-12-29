@@ -4,6 +4,7 @@ use std::io::Write;
 use crate::input::errors::ReaderError;
 use crate::input::reader::Reader;
 
+use crate::programs::commands::batch::Batch;
 use crate::programs::commands::date::Date;
 use crate::programs::commands::echo::Echo;
 use crate::programs::commands::head::Head;
@@ -24,7 +25,7 @@ pub struct Interpreter {
     promt_sign: String,
     running: bool,
     input_reader: Reader,
-    command_line_queue: Vec<Vec<CommandFormat>>,
+    command_line_queue: Vec<Result<Vec<CommandFormat>, ReaderError>>,
 }
 
 #[derive(Debug, Clone)]
@@ -100,14 +101,24 @@ impl Interpreter {
 
     /*
 
-        Used by batch cli command to fill it
+        Used by batch cli command
 
     */
-    pub fn add_to_command_line_queue(&self) {}
+
+    pub fn parse_thorugh_reader(
+        &self,
+        cli_line: String,
+    ) -> Result<Vec<CommandFormat>, ReaderError> {
+        self.input_reader.parse_line_to_commands(cli_line)
+    }
+
+    pub fn add_to_command_line_queue(&mut self, next_one: Result<Vec<CommandFormat>, ReaderError>) {
+        self.command_line_queue.push(next_one);
+    }
 
     fn get_next_cli_line(&mut self) -> Result<Vec<CommandFormat>, ReaderError> {
-        if let Some(data) = self.command_line_queue.pop() {
-            return Ok(data);
+        if let Some(_) = self.command_line_queue.first() {
+            return self.command_line_queue.remove(0);
         } else {
             return self.input_reader.get_next_input();
         }
@@ -188,9 +199,9 @@ impl Interpreter {
             }
 
             "batch" => {
-                // let command = RefCell::new(Date::new(cli_input));
-                // command.borrow_mut().execute(self);
-                // *pipe_to_next = command.borrow().get_output();
+                let command = RefCell::new(Batch::new(cli_input));
+                command.borrow_mut().execute(self);
+                *pipe_to_next = command.borrow().get_output();
             }
             _ => {
                 println!("Command name is not correct, try again");
@@ -230,11 +241,11 @@ impl Interpreter {
         }?;
 
         // If pipe was given and all errors were resolved before, now just concat
+        println!("{}", cli_input);
         if pipe_to_next != "" {
-            cli_input += pipe_to_next.as_str();
-            cli_input.insert(0, '"');
-            cli_input += "\"";
+            cli_input += (" \"".to_owned() + pipe_to_next.as_str() + "\"").as_str();
         }
+        println!("{}", cli_input);
 
         // Return proper input
         Ok(cli_input)

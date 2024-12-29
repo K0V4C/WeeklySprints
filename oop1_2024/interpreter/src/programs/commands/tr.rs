@@ -1,4 +1,7 @@
-use super::super::i_intepretable::{Interpretable, StdOutput};
+use super::{
+    super::i_intepretable::{Interpretable, StdOutput},
+    utility::get_quoted_strings,
+};
 use crate::{
     cli::Interpreter,
     programs::{errors::CommandError, i_intepretable::StdInput},
@@ -22,29 +25,6 @@ struct TrPackage {
 
 */
 impl Tr {
-
-    fn get_quoted_strings(string: &str) -> Vec<String> {
-
-        let mut quoted_strings: Vec<String> = vec![];
-        let mut quotes_open = false;
-
-        let mut start_idx = 0;
-        for (running_idx ,x) in string.chars().enumerate() {
-            if quotes_open && x == '"' {
-                quoted_strings.push(
-                    string[start_idx..=running_idx].trim_matches('"').to_owned()
-                );
-                quotes_open = false;
-            } else if !quotes_open && x == '"' {
-                start_idx = running_idx;
-                quotes_open = true;
-            }
-        }
-
-        println!("{:?}", quoted_strings);
-        return quoted_strings;
-    }
-
     fn get_input(&self) -> Result<TrPackage, CommandError> {
         /*
             Possible inputs are like this:
@@ -55,7 +35,7 @@ impl Tr {
 
         if let Some(first_char) = self.std_input.chars().next() {
             if first_char == '"' {
-                let quoted_strings = Tr::get_quoted_strings(self.std_input.as_str());
+                let quoted_strings = get_quoted_strings(self.std_input.as_str())?;
                 //In case only argjuments were given
                 if quoted_strings.len() == 1 || quoted_strings.len() == 2 {
                     return Ok(TrPackage {
@@ -69,7 +49,6 @@ impl Tr {
                 // > if there are 2 ignore second
                 // > if there are more then 3 error it
 
-
                 if quoted_strings.len() == 3 {
                     return Ok(TrPackage {
                         arguments: quoted_strings[0].clone(),
@@ -77,6 +56,7 @@ impl Tr {
                         with: Some(quoted_strings[2].clone()),
                     });
                 }
+                return Err(CommandError::TrTooManyStrings());
             } else {
                 let mut split_string = self.std_input.split_whitespace().collect::<Vec<&str>>();
                 let file_name = split_string.remove(0);
@@ -89,7 +69,7 @@ impl Tr {
                         // or
                         //                  [arguments] "what" "with"
 
-                        let quoted_strings = Tr::get_quoted_strings(split_string.join(" ").as_str());
+                        let quoted_strings = get_quoted_strings(split_string.join(" ").as_str())?;
 
                         if quoted_strings.len() == 1 || quoted_strings.len() == 0 {
                             return Ok(TrPackage {
@@ -110,6 +90,7 @@ impl Tr {
                                 with: Some(quoted_strings[1].clone()),
                             });
                         }
+                        return Err(CommandError::TrTooManyStrings());
                     }
                     Err(_) => {
                         return Err(CommandError::FileNotFound(file_name.to_owned()));
@@ -130,14 +111,13 @@ impl Interpretable for Tr {
         let input = self.get_input();
         match input {
             Ok(value) => {
-                
-                let what  = value.what.clone();
+                let what = value.what.clone();
                 let with = value.with.clone();
-                
+
                 if let Some(_) = value.with {
-                    self.std_output = Ok(
-                        value.arguments.replace(what.unwrap().as_str(), with.unwrap().as_str())  
-                    );
+                    self.std_output = Ok(value
+                        .arguments
+                        .replace(what.unwrap().as_str(), with.unwrap().as_str()));
                 } else {
                     self.std_output = Ok(value.arguments);
                 }

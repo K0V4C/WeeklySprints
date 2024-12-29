@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::fs::OpenOptions;
 use std::io::Write;
 
 use crate::input::errors::ReaderError;
@@ -33,6 +34,7 @@ pub struct CommandFormat {
     command: String,
     in_redirection: String,
     out_redirection: String,
+    append_redirection: String,
     command_args: String,
 }
 
@@ -41,12 +43,14 @@ impl CommandFormat {
         command: String,
         in_redirection: String,
         out_redirection: String,
+        append_redirection: String,
         command_args: String,
     ) -> Self {
         CommandFormat {
             command,
             in_redirection,
             out_redirection,
+            append_redirection,
             command_args,
         }
     }
@@ -81,13 +85,27 @@ impl Interpreter {
         self.promt_sign = sign;
     }
 
-    fn print(&self, pipe_to_next: StdOutput, output_file: String) {
+    fn print(&self, pipe_to_next: StdOutput, output_file: String, append_file: String) {
         // Output of CLI LINE
         match pipe_to_next {
             Ok(final_value) => {
                 if output_file != "" {
                     if let Err(x) = std::fs::write(output_file, final_value) {
                         println!("Writing to file at the end went wrong: {}", x);
+                    }
+                } else if append_file != "" {
+                    match OpenOptions::new()
+                        .write(true)
+                        .append(true)
+                        .open("example.txt")
+                    {
+                        Ok(mut f) => f
+                            .write_all(final_value.as_bytes())
+                            .unwrap_or(println!("Error occured appending to file")),
+
+                        Err(e) => {
+                            println!("Error occured appending to file: {}", e.to_string())
+                        }
                     }
                 } else {
                     println!("{}", final_value)
@@ -274,8 +292,10 @@ impl Interpreter {
             }
             // Used to pass to next command
             let mut pipe_to_next: StdOutput = Ok(String::new());
-            // Used to rember output file if it exists
+            // Used to remember output file if it exists
             let mut output_file = String::new();
+            // Used to remember append file if it exists
+            let mut append_file = String::new();
             // Iterating through command that has multiple pipes
             for command_data in data {
                 /*
@@ -294,10 +314,11 @@ impl Interpreter {
                         }
                     };
                 output_file = command_data.out_redirection.clone();
+                append_file = command_data.append_redirection.clone();
                 self.operate_over_commands(&command_data, cli_input, &mut pipe_to_next);
             }
             // Output of CLI LINE
-            self.print(pipe_to_next, output_file);
+            self.print(pipe_to_next, output_file, append_file);
         }
     }
 }

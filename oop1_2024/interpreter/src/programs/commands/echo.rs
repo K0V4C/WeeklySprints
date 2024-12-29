@@ -35,21 +35,21 @@ impl Echo {
             something.txt
         */
 
-        if  get_quoted_strings(self.std_input.as_str())?.len() > 1 {
+        if get_quoted_strings(self.std_input.as_str())?.len() > 1 {
             return Err(CommandError::EmptyString());
         }
-       
+
         // Emprty string error
         if let None = self.std_input.chars().next() {
             return Err(CommandError::EmptyString());
-        } 
-        
+        }
+
         // In case it is a string
         if self.std_input.chars().next().unwrap() == '"' {
             let ret = self.std_input.clone().trim_matches('"').to_owned();
             return Ok(EchoPackage { arguments: ret });
         }
-        
+
         // In case it is a file
         let file_name = self.std_input.trim();
         let file = std::fs::read_to_string(file_name);

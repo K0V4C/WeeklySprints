@@ -4,6 +4,8 @@ use crate::input::errors::ReaderError;
 #[derive(Debug)]
 pub struct Reader;
 
+const MAX_INPUT_STRING_SIZE: usize = 512;
+
 impl Reader {
     pub fn new() -> Self {
         Reader
@@ -49,6 +51,11 @@ impl Reader {
 
     */
     fn split_on_pipe(&self, text: &String) -> Result<Vec<String>, ReaderError> {
+        // Checkf if input string is too big
+        if text.len() > MAX_INPUT_STRING_SIZE {
+            return Err(ReaderError::StringTooLong());
+        }
+
         let mut quotes_open = false;
         let mut split_input: Vec<String> = vec![];
         let mut start = 0;
@@ -95,25 +102,30 @@ impl Reader {
             let mut command_name = String::new();
             let mut in_file = String::new();
             let mut out_file = String::new();
+            let mut append_file = String::new();
             let mut args = String::new();
 
             while let Some(word) = text_iterator.next() {
-                if word == "<" {
-                    match text_iterator.next() {
+                match word {
+                    "<" => match text_iterator.next() {
                         Some(s) => in_file = s.to_owned(),
                         None => return Err(ReaderError::UndefinedInputRedirection()),
-                    }
-                } else if word == ">" {
-                    match text_iterator.next() {
+                    },
+                    ">" => match text_iterator.next() {
                         Some(s) => out_file = s.to_owned(),
                         None => return Err(ReaderError::UndefinedOutputRedirection()),
-                    }
-                } else {
-                    if command_name == "" {
-                        command_name = word.to_owned();
-                    } else {
-                        args += word;
-                        args += " ";
+                    },
+                    ">>" => match text_iterator.next() {
+                        Some(s) => append_file = s.to_owned(),
+                        None => return Err(ReaderError::UndefinedOutputRedirection()),
+                    },
+                    _ => {
+                        if command_name == "" {
+                            command_name = word.to_owned();
+                        } else {
+                            args += word;
+                            args += " ";
+                        }
                     }
                 }
             }
@@ -121,6 +133,7 @@ impl Reader {
                 command_name,
                 in_file.trim().to_owned(),
                 out_file.trim().to_owned(),
+                append_file.trim().to_owned(),
                 args.trim().to_owned(),
             ));
         }

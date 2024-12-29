@@ -6,6 +6,7 @@ pub enum ReaderError {
     UndefinedInputRedirection(),
     UndefinedOutputRedirection(),
     UnclosedQuotes(),
+    StringTooLong(),
 }
 
 impl Display for ReaderError {
@@ -22,6 +23,9 @@ impl Display for ReaderError {
             }
             Self::UnclosedQuotes() => {
                 write!(f, "Quotes not close at the end of the line")
+            }
+            Self::StringTooLong() => {
+                write!(f, "String is > 512 characters")
             }
         }
     }

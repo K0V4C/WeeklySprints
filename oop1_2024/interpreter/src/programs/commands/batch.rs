@@ -29,7 +29,7 @@ impl Batch {
 
             options: None
         */
-        
+
         if let Some(first_character) = self.std_input.chars().next() {
             if first_character == '"' {
                 let ret = self

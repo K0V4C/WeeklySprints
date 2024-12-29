@@ -1,10 +1,14 @@
 use std::fs::{metadata, OpenOptions};
 
-use super::super::i_intepretable::{Interpretable, StdInput, StdOutput};
-use crate::{cli::Interpreter, programs::errors::CommandError};
+use super::super::i_intepretable::{Interpretable, StdOutput};
+use crate::{
+    cli::Interpreter,
+    programs::{errors::CommandError, i_intepretable::StdInput},
+};
 
 pub struct Truncate {
-    std_input: String,
+    std_input: StdInput,
+    std_output: StdOutput,
 }
 /*
 
@@ -13,8 +17,13 @@ pub struct Truncate {
     options: none
 
 */
+
+struct TruncatePackage {
+    filename: String,
+}
+
 impl Truncate {
-    fn get_input(&self) -> StdInput {
+    fn get_input(&self) -> Result<TruncatePackage, CommandError> {
         /*
             Possible inputs are like this:
 
@@ -22,45 +31,56 @@ impl Truncate {
 
         */
 
-        // Check for empty string
-        if self.std_input == "" {
-            return Err(CommandError::EmptyString());
+        if let Some(first_char) = self.std_input.chars().next() {
+            if first_char == '"' {
+                return Err(CommandError::NotAllowedArguments());
+            } else {
+                return Ok(TruncatePackage {
+                    filename: self.std_input.trim().to_owned(),
+                });
+            }
         }
 
-        let has_quotes = self.std_input.chars().collect::<Vec<char>>()[0] == '"';
-
-        if has_quotes {
-            return Err(CommandError::NotAllowedArguments());
-        } else {
-            return Ok(self.std_input.trim().to_owned());
-        }
+        return Err(CommandError::EmptyString());
     }
 }
 
 impl Interpretable for Truncate {
-    fn execute(&self, _: &mut Interpreter) -> StdOutput {
+    fn get_output(&self) -> StdOutput {
+        self.std_output.clone()
+    }
+
+    fn execute(&mut self, _: &mut Interpreter) {
         let input = self.get_input();
         match input {
             Ok(value) => {
-                match metadata(value.clone()) {
+                match metadata(value.filename.clone()) {
                     Err(_) => {
-                        return Err(CommandError::FileNotFound(value));
+                        self.std_output = Err(CommandError::FileNotFound(value.filename.clone()));
                     }
                     _ => {}
                 }
 
-                if let Err(e) = OpenOptions::new().write(true).truncate(true).open(value) {
-                    return Err(CommandError::TruncateFailedToTruncateAFile(e.to_string()));
+                if let Err(e) = OpenOptions::new()
+                    .write(true)
+                    .truncate(true)
+                    .open(value.filename)
+                {
+                    self.std_output =
+                        Err(CommandError::TruncateFailedToTruncateAFile(e.to_string()));
                 };
-                Ok(String::new())
+                self.std_output = Ok(String::new());
             }
             Err(error) => {
-                return Err(error);
+                self.std_output = Err(error);
             }
         }
     }
 
     fn new(input: String) -> Self {
-        Truncate { std_input: input }
+        Truncate {
+            std_input: input,
+            std_output: Ok(String::new()),
+        }
     }
 }

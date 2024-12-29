@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::io::Write;
 
 use crate::input::errors::ReaderError;
@@ -129,56 +130,67 @@ impl Interpreter {
     ) {
         match command_data.command.as_str() {
             "echo" => {
-                let command = Echo::new(cli_input);
-                *pipe_to_next = command.execute(self);
+                let command = RefCell::new(Echo::new(cli_input));
+                command.borrow_mut().execute(self);
+                *pipe_to_next = command.borrow().get_output();
             }
 
             "prompt" => {
-                let command = Prompt::new(cli_input);
-                *pipe_to_next = command.execute(self);
+                let command = RefCell::new(Prompt::new(cli_input));
+                command.borrow_mut().execute(self);
+                *pipe_to_next = command.borrow().get_output();
             }
 
             "time" => {
-                let command = Time::new(cli_input);
-                *pipe_to_next = command.execute(self);
+                let command = RefCell::new(Time::new(cli_input));
+                command.borrow_mut().execute(self);
+                *pipe_to_next = command.borrow().get_output();
             }
 
             "date" => {
-                let command = Date::new(cli_input);
-                *pipe_to_next = command.execute(self);
+                let command = RefCell::new(Date::new(cli_input));
+                command.borrow_mut().execute(self);
+                *pipe_to_next = command.borrow().get_output();
             }
 
             "touch" => {
-                let command = Touch::new(cli_input);
-                *pipe_to_next = command.execute(self);
+                let command = RefCell::new(Touch::new(cli_input));
+                command.borrow_mut().execute(self);
+                *pipe_to_next = command.borrow().get_output();
             }
 
             "rm" => {
-                let command = Rm::new(cli_input);
-                *pipe_to_next = command.execute(self);
+                let command = RefCell::new(Rm::new(cli_input));
+                command.borrow_mut().execute(self);
+                *pipe_to_next = command.borrow().get_output();
             }
 
             "truncate" => {
-                let command = Truncate::new(cli_input);
-                *pipe_to_next = command.execute(self);
+                let command = RefCell::new(Truncate::new(cli_input));
+                command.borrow_mut().execute(self);
+                *pipe_to_next = command.borrow().get_output();
             }
             "wc" => {
-                let command = Wc::new(cli_input);
-                *pipe_to_next = command.execute(self);
+                let command = RefCell::new(Wc::new(cli_input));
+                command.borrow_mut().execute(self);
+                *pipe_to_next = command.borrow().get_output();
             }
             "tr" => {
-                let command = Tr::new(cli_input);
-                *pipe_to_next = command.execute(self);
+                let command = RefCell::new(Tr::new(cli_input));
+                command.borrow_mut().execute(self);
+                *pipe_to_next = command.borrow().get_output();
             }
 
             "head" => {
-                let command = Head::new(cli_input);
-                *pipe_to_next = command.execute(self);
+                let command = RefCell::new(Head::new(cli_input));
+                command.borrow_mut().execute(self);
+                *pipe_to_next = command.borrow().get_output();
             }
 
             "batch" => {
-                // let command = ::new(cli_input);
-                // *pipe_to_next = command.execute(self);
+                // let command = RefCell::new(Date::new(cli_input));
+                // command.borrow_mut().execute(self);
+                // *pipe_to_next = command.borrow().get_output();
             }
             _ => {
                 println!("Command name is not correct, try again");

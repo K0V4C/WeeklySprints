@@ -1,10 +1,14 @@
 use std::fs::File;
 
-use super::super::i_intepretable::{Interpretable, StdInput, StdOutput};
-use crate::{cli::Interpreter, programs::errors::CommandError};
+use super::super::i_intepretable::{Interpretable, StdOutput};
+use crate::{
+    cli::Interpreter,
+    programs::{errors::CommandError, i_intepretable::StdInput},
+};
 
 pub struct Touch {
-    std_input: String,
+    std_input: StdInput,
+    std_output: StdOutput,
 }
 /*
 
@@ -13,8 +17,13 @@ pub struct Touch {
     options: none
 
 */
+
+struct TouchPackage {
+    filename: String,
+}
+
 impl Touch {
-    fn get_input(&self) -> StdInput {
+    fn get_input(&self) -> Result<TouchPackage, CommandError> {
         /*
             Possible inputs are like this:
 
@@ -22,42 +31,48 @@ impl Touch {
 
         */
 
-        // Check for empty string
-        if self.std_input == "" {
-            return Err(CommandError::EmptyString());
+        if let Some(first_char) = self.std_input.chars().next() {
+            if first_char == '"' {
+                return Err(CommandError::NotAllowedArguments());
+            } else {
+                return Ok(TouchPackage {
+                    filename: self.std_input.trim().to_owned(),
+                });
+            }
         }
 
-        let has_quotes = self.std_input.chars().collect::<Vec<char>>()[0] == '"';
-
-        if has_quotes {
-            return Err(CommandError::NotAllowedArguments());
-        } else {
-            return Ok(self.std_input.trim().to_owned());
-        }
+        return Err(CommandError::EmptyString());
     }
 }
 
 impl Interpretable for Touch {
-    fn execute(&self, _: &mut Interpreter) -> StdOutput {
+    fn get_output(&self) -> StdOutput {
+        self.std_output.clone()
+    }
+    fn execute(&mut self, _: &mut Interpreter) {
         let input = self.get_input();
         match input {
             Ok(value) => {
-                match File::create(value) {
+                match File::create(value.filename) {
                     Ok(_file) => {
-                        return Ok(String::new());
+                        self.std_output = Ok(String::new());
                     }
                     Err(error) => {
-                        return Err(CommandError::TouchFailedToCreateFile(error.to_string()));
+                        self.std_output =
+                            Err(CommandError::TouchFailedToCreateFile(error.to_string()));
                     }
                 };
             }
             Err(error) => {
-                return Err(error);
+                self.std_output = Err(error);
             }
         }
     }
 
     fn new(input: String) -> Self {
-        Touch { std_input: input }
+        Touch {
+            std_input: input,
+            std_output: Ok(String::new()),
+        }
     }
 }

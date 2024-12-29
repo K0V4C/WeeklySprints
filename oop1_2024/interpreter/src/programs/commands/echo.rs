@@ -1,8 +1,12 @@
-use super::super::i_intepretable::{Interpretable, StdInput, StdOutput};
-use crate::{cli::Interpreter, programs::errors::CommandError};
+use super::super::i_intepretable::{Interpretable, StdOutput};
+use crate::{
+    cli::Interpreter,
+    programs::{errors::CommandError, i_intepretable::StdInput},
+};
 
 pub struct Echo {
-    std_input: String,
+    std_input: StdInput,
+    std_output: StdOutput,
 }
 /*
 
@@ -11,8 +15,13 @@ pub struct Echo {
     options: none
 
 */
+
+struct EchoPackage {
+    arguments: String,
+}
+
 impl Echo {
-    fn get_input(&self) -> StdInput {
+    fn get_input(&self) -> Result<EchoPackage, CommandError> {
         /*
             Possible inputs are like this:
 
@@ -32,13 +41,13 @@ impl Echo {
 
         if has_quotes {
             let ret = self.std_input.clone().trim_matches('"').to_owned();
-            return Ok(ret);
+            return Ok(EchoPackage { arguments: ret });
         } else {
             let file_name = self.std_input.trim();
             let file = std::fs::read_to_string(file_name);
             match file {
                 Ok(f) => {
-                    return Ok(f);
+                    return Ok(EchoPackage { arguments: f });
                 }
                 Err(_) => {
                     return Err(CommandError::FileNotFound(file_name.to_owned()));
@@ -49,19 +58,26 @@ impl Echo {
 }
 
 impl Interpretable for Echo {
-    fn execute(&self, _interpreter: &mut Interpreter) -> StdOutput {
+    fn get_output(&self) -> StdOutput {
+        self.std_output.clone()
+    }
+
+    fn execute(&mut self, _interpreter: &mut Interpreter) {
         let input = self.get_input();
         match input {
             Ok(value) => {
-                return Ok(value);
+                self.std_output = Ok(value.arguments);
             }
             Err(error) => {
-                return Err(error);
+                self.std_output = Err(error);
             }
         }
     }
 
     fn new(input: String) -> Self {
-        Echo { std_input: input }
+        Echo {
+            std_input: input,
+            std_output: Ok(String::new()),
+        }
     }
 }

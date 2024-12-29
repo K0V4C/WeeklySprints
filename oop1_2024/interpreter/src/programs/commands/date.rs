@@ -1,10 +1,14 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use super::super::i_intepretable::{Interpretable, StdInput, StdOutput};
-use crate::{cli::Interpreter, programs::errors::CommandError};
+use super::super::i_intepretable::{Interpretable, StdOutput};
+use crate::{
+    cli::Interpreter,
+    programs::{errors::CommandError, i_intepretable::StdInput},
+};
 
 pub struct Date {
-    std_input: String,
+    std_input: StdInput,
+    std_output: StdOutput,
 }
 /*
 
@@ -14,8 +18,10 @@ pub struct Date {
 
 */
 
+struct DatePackage;
+
 impl Date {
-    fn get_input(&self) -> StdInput {
+    fn get_input(&self) -> Result<DatePackage, CommandError> {
         /*
             Possible inputs are like this:
 
@@ -28,12 +34,16 @@ impl Date {
             return Err(CommandError::NotAllowedArguments());
         }
 
-        Ok(String::from(""))
+        Ok(DatePackage)
     }
 }
 
 impl Interpretable for Date {
-    fn execute(&self, _: &mut Interpreter) -> StdOutput {
+    fn get_output(&self) -> StdOutput {
+        return self.std_output.clone();
+    }
+
+    fn execute(&mut self, _: &mut Interpreter) {
         match self.get_input() {
             Ok(_) => {
                 // Get the current system time
@@ -59,13 +69,16 @@ impl Interpretable for Date {
                 let day = days_in_year % 30; // Remainder for the day
 
                 // Return the current date (rough approximation)
-                return Ok(format!("Current date: {}-{:02}-{:02}", year, month, day));
+                self.std_output = Ok(format!("Current date: {}-{:02}-{:02}", year, month, day));
             }
-            Err(e) => return Err(e),
+            Err(e) => self.std_output = Err(e),
         }
     }
 
     fn new(input: String) -> Self {
-        Date { std_input: input }
+        Date {
+            std_input: input,
+            std_output: Ok(String::new()),
+        }
     }
 }

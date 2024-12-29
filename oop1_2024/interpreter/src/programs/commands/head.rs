@@ -1,10 +1,14 @@
 use std::collections::HashMap;
 
-use super::super::i_intepretable::{Interpretable, StdInput, StdOutput};
-use crate::{cli::Interpreter, programs::errors::CommandError};
+use super::super::i_intepretable::{Interpretable, StdOutput};
+use crate::{
+    cli::Interpreter,
+    programs::{errors::CommandError, i_intepretable::StdInput},
+};
 
 pub struct Head {
-    std_input: String,
+    std_input: StdInput,
+    std_output: StdOutput,
 }
 /*
 
@@ -13,10 +17,26 @@ pub struct Head {
     options: -ncount
 
 */
+
+struct HeadPackage {
+    option_n: u8,
+    arguments: String,
+}
+
 impl Head {
-    fn get_options(&self) -> Result<HashMap<String, String>, CommandError> {
-        let mut option_map: HashMap<String, String> = HashMap::new();
+    fn get_input(&self) -> Result<HeadPackage, CommandError> {
+        /*
+            Possible inputs are like this:
+
+            > head -n5 file.txt
+        */
+
+        /*
+            Check if -ncount option was set
+        */
+
         let mut iterator = self.std_input.trim().split_whitespace().into_iter();
+        let mut option_map = HashMap::new();
 
         while let Some(word) = iterator.next() {
             if word.len() >= 2 && word[0..2] == *"-n" {
@@ -24,30 +44,17 @@ impl Head {
                     return Err(CommandError::HeadCountNotGiven());
                 }
 
-                option_map
-                    .entry("-n".to_owned())
-                    .or_insert(word[2..].to_owned());
+                let number = match word[2..].parse::<u8>() {
+                    Ok(x) => x,
+                    Err(_) => return Err(CommandError::HeadCountNumberInvalid()),
+                };
+
+                option_map.entry("-n".to_owned()).or_insert(number);
             }
             // Todo: add error handling for other options
         }
 
         if option_map.len() != 1 {
-            return Err(CommandError::OptionsNotDefined());
-        }
-
-        Ok(option_map)
-    }
-
-    fn get_input(&self) -> StdInput {
-        /*
-            Possible inputs are like this:
-
-            > head -n5 file.txt
-
-        */
-
-        let has_options = self.get_options()?.len() > 0;
-        if has_options == false {
             return Err(CommandError::OptionsNotDefined());
         }
 
@@ -58,12 +65,21 @@ impl Head {
         if let Some(first_char) = remainder.chars().next() {
             if first_char == '"' {
                 // Handle quoted input
-                return Ok(remainder.trim_matches('"').to_owned());
+                return Ok(HeadPackage {
+                    option_n: *option_map.get("-n").unwrap(),
+                    arguments: remainder.trim_matches('"').to_owned(),
+                });
             } else {
                 // Handle file name
                 let file_name = remainder.trim();
-                return std::fs::read_to_string(file_name)
-                    .map_err(|_| CommandError::FileNotFound(file_name.to_owned()));
+                let file_content = match std::fs::read_to_string(file_name) {
+                    Ok(x) => x,
+                    Err(_) => return Err(CommandError::FileNotFound(file_name.to_owned())),
+                };
+                return Ok(HeadPackage {
+                    option_n: *option_map.get("-n").unwrap(),
+                    arguments: file_content,
+                });
             }
         }
 
@@ -72,40 +88,38 @@ impl Head {
 }
 
 impl Interpretable for Head {
-    fn execute(&self, _: &mut Interpreter) -> StdOutput {
+    fn get_output(&self) -> StdOutput {
+        self.std_output.clone()
+    }
+
+    fn execute(&mut self, _: &mut Interpreter) {
         let input = self.get_input();
         match input {
             Ok(value) => {
-                let options = self.get_options()?;
-                let split = value.split('\n').collect::<Vec<&str>>();
+                let num = value.option_n as usize;
+                let split = value.arguments.split('\n').collect::<Vec<&str>>();
 
-                if let Some(num) = options.get("-n") {
-                    let num = match num.parse::<usize>() {
-                        Ok(x) => x,
-                        Err(_) => return Err(CommandError::HeadCountNumberInvalid()),
-                    };
-
-                    if num > split.len() {
-                        return Ok(split.join("\n"));
-                    } else {
-                        let mut ret = String::new();
-                        for idx in 0..num {
-                            ret += split[idx];
-                            ret += "\n";
-                        }
-                        return Ok(ret);
-                    }
+                if num > split.len() {
+                    self.std_output = Ok(split.join("\n"));
                 } else {
-                    return Err(CommandError::OptionsNotDefined());
+                    let mut ret = String::new();
+                    for idx in 0..num {
+                        ret += split[idx];
+                        ret += "\n";
+                    }
+                    self.std_output = Ok(ret);
                 }
             }
             Err(error) => {
-                return Err(error);
+                self.std_output = Err(error);
             }
         }
     }
 
     fn new(input: String) -> Self {
-        Head { std_input: input }
+        Head {
+            std_input: input,
+            std_output: Ok(String::new()),
+        }
     }
 }

@@ -1,10 +1,14 @@
 use std::time::SystemTime;
 
-use super::super::i_intepretable::{Interpretable, StdInput, StdOutput};
-use crate::{cli::Interpreter, programs::errors::CommandError};
+use super::super::i_intepretable::{Interpretable, StdOutput};
+use crate::{
+    cli::Interpreter,
+    programs::{errors::CommandError, i_intepretable::StdInput},
+};
 
 pub struct Time {
-    std_input: String,
+    std_input: StdInput,
+    std_output: StdOutput,
 }
 /*
 
@@ -13,8 +17,11 @@ pub struct Time {
     options: none
 
 */
+
+struct TimePackage;
+
 impl Time {
-    fn get_input(&self) -> StdInput {
+    fn get_input(&self) -> Result<TimePackage, CommandError> {
         /*
             Possible inputs are like this:
 
@@ -27,22 +34,29 @@ impl Time {
             return Err(CommandError::NotAllowedArguments());
         }
 
-        Ok(String::from(""))
+        Ok(TimePackage)
     }
 }
 
 impl Interpretable for Time {
-    fn execute(&self, _: &mut Interpreter) -> StdOutput {
+    fn get_output(&self) -> StdOutput {
+        self.std_output.clone()
+    }
+
+    fn execute(&mut self, _: &mut Interpreter) {
         match self.get_input() {
             Ok(_) => {
                 let now = format!("{:?}", SystemTime::now());
-                return Ok(now);
+                self.std_output = Ok(now);
             }
-            Err(e) => return Err(e),
+            Err(e) => self.std_output = Err(e),
         }
     }
 
     fn new(input: String) -> Self {
-        Time { std_input: input }
+        Time {
+            std_input: input,
+            std_output: Ok(String::new()),
+        }
     }
 }

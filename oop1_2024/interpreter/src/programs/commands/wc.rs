@@ -1,10 +1,14 @@
 use std::collections::HashMap;
 
-use super::super::i_intepretable::{Interpretable, StdInput, StdOutput};
-use crate::{cli::Interpreter, programs::errors::CommandError};
+use super::super::i_intepretable::{Interpretable, StdOutput};
+use crate::{
+    cli::Interpreter,
+    programs::{errors::CommandError, i_intepretable::StdInput},
+};
 
 pub struct Wc {
-    std_input: String,
+    std_input: StdInput,
+    std_output: StdOutput,
 }
 /*
 
@@ -13,8 +17,23 @@ pub struct Wc {
     options: -w / -c
 
 */
+
+struct WcPackage {
+    option: String,
+    arguments: String,
+}
+
 impl Wc {
-    fn get_options(&self) -> Result<HashMap<String, String>, CommandError> {
+    fn get_input(&self) -> Result<WcPackage, CommandError> {
+        /*
+            Possible inputs are like this:
+
+            > wc -opt [arguments]
+
+            options: -w -> word count
+                     -c -> char count
+
+        */
         let mut option_map: HashMap<String, String> = HashMap::new();
         let mut iterator = self.std_input.trim().split_whitespace().into_iter();
 
@@ -35,28 +54,16 @@ impl Wc {
         if option_map.len() >= 2 {
             return Err(CommandError::WcBothOptionsListed());
         }
-
-        Ok(option_map)
-    }
-
-    fn get_input(&self) -> StdInput {
-        /*
-            Possible inputs are like this:
-
-            > wc -opt [arguments]
-
-            options: -w -> word count
-                     -c -> char count
-
-        */
-
-        // Check for empty string
-        if self.std_input == "" {
-            return Err(CommandError::EmptyString());
+        if option_map.len() == 0 {
+            return Err(CommandError::OptionsNotDefined());
         }
 
-        let has_options = self.get_options()?.len() > 0;
-        if has_options == false {
+        let mut _selected_option = String::new();
+        if let Some(_) = option_map.get("-c") {
+            _selected_option = "-c".to_owned();
+        } else if let Some(_) = option_map.get("-w") {
+            _selected_option = "-w".to_owned();
+        } else {
             return Err(CommandError::OptionsNotDefined());
         }
 
@@ -68,58 +75,79 @@ impl Wc {
             .trim()
             .to_owned();
 
-        let has_quotes = remainder.chars().collect::<Vec<char>>()[0] == '"';
-        println!("{}", remainder);
-        if has_quotes {
-            let ret = remainder.clone().trim_matches('"').to_owned();
-            println!("{}", ret);
-            return Ok(ret);
-        } else {
-            let file_name = remainder.trim();
-            let file = std::fs::read_to_string(file_name);
-            match file {
-                Ok(f) => {
-                    return Ok(f);
-                }
-                Err(_) => {
-                    return Err(CommandError::FileNotFound(file_name.to_owned()));
+        if let Some(first_character) = self.std_input.chars().next() {
+            if first_character == '"' {
+                let ret = remainder.clone().trim_matches('"').to_owned();
+                return Ok(WcPackage {
+                    option: _selected_option,
+                    arguments: ret,
+                });
+            } else {
+                let file_name = remainder.trim();
+                let file = std::fs::read_to_string(file_name);
+                match file {
+                    Ok(f) => {
+                        return Ok(WcPackage {
+                            option: _selected_option,
+                            arguments: f,
+                        });
+                    }
+                    Err(_) => {
+                        return Err(CommandError::FileNotFound(file_name.to_owned()));
+                    }
                 }
             }
         }
+        return Err(CommandError::EmptyString());
     }
 }
 
 impl Interpretable for Wc {
-    fn execute(&self, _: &mut Interpreter) -> StdOutput {
+    fn get_output(&self) -> StdOutput {
+        self.std_output.clone()
+    }
+
+    fn execute(&mut self, _: &mut Interpreter) {
         let input = self.get_input();
         match input {
             Ok(value) => {
-                let options = self.get_options()?;
-                if options.contains_key("-w") {
-                    return Ok(value
-                        .trim()
-                        .split_whitespace()
-                        .collect::<Vec<&str>>()
-                        .len()
-                        .to_string());
-                } else if options.contains_key("-c") {
-                    return Ok(value
-                        .trim()
-                        .chars()
-                        .collect::<Vec<char>>()
-                        .len()
-                        .to_string());
-                } else {
-                    return Err(CommandError::OptionsNotDefined());
-                }
+                let option = value.option;
+
+                match option.as_str() {
+                    "-w" => {
+                        self.std_output = Ok(value
+                            .arguments
+                            .trim()
+                            .split_whitespace()
+                            .collect::<Vec<&str>>()
+                            .len()
+                            .to_string());
+                    }
+
+                    "-c" => {
+                        self.std_output = Ok(value
+                            .arguments
+                            .trim()
+                            .chars()
+                            .collect::<Vec<char>>()
+                            .len()
+                            .to_string());
+                    }
+                    _ => {
+                        panic!("WC ERROR");
+                    }
+                };
             }
             Err(error) => {
-                return Err(error);
+                self.std_output = Err(error);
             }
         }
     }
 
     fn new(input: String) -> Self {
-        Wc { std_input: input }
+        Wc {
+            std_input: input,
+            std_output: Ok(String::new()),
+        }
     }
 }

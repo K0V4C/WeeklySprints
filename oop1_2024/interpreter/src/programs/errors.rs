@@ -20,8 +20,6 @@ pub enum CommandError {
     WcBothOptionsListed(),
     OptionsNotDefined(),
 
-    TooManyArguments(),
-
     TrTooManyStrings(),
     TrArgumentsAreNotString(),
 
@@ -59,9 +57,6 @@ impl fmt::Display for CommandError {
             }
             Self::OptionsNotDefined() => {
                 write!(f, "Command ecnoutered an error, options were not given")
-            }
-            Self::TooManyArguments() => {
-                write!(f, "Command ecnoutered an error, too many options wer given")
             }
             Self::HeadCountNotGiven() => {
                 write!(f, "Command [Head] ecnoutered an error, count not given")
@@ -135,12 +130,6 @@ impl From<CommandError> for InterpreterError {
                 return InterpreterError::CommandError(format!(
                     "{}",
                     CommandError::OptionsNotDefined()
-                ))
-            }
-            CommandError::TooManyArguments() => {
-                return InterpreterError::CommandError(format!(
-                    "{}",
-                    CommandError::TooManyArguments()
                 ))
             }
             CommandError::HeadCountNotGiven() => {

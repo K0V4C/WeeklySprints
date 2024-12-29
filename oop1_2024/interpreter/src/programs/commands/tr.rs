@@ -3,7 +3,7 @@ use super::{
     utility::get_quoted_strings,
 };
 use crate::{
-    cli::Interpreter, input, programs::{errors::CommandError, i_intepretable::StdInput}
+    cli::Interpreter, programs::{errors::CommandError, i_intepretable::StdInput}
 };
 
 pub struct Tr {

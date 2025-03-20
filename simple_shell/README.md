@@ -8,3 +8,6 @@ There are multiple ways to improve on this project:
 2. Implement more builtins and more operations that could be done with CLI, make this CLI a viable daily driver
 3. Instead of using Command that allows us to use Stdio::inherit and Stdio::piped so underlying programs are aware what they should do, make our own Command and do the
 standard input, ouput, arguments and piping ourselves.
+
+
+All credit to: joshmcguigan

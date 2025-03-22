@@ -1,7 +1,7 @@
 mod terminal;
 mod view;
 
-use std::cmp::min;
+use std::{cmp::min, io::Error};
 
 use crossterm::event::{
     Event::{self, Key, Resize},
@@ -18,7 +18,6 @@ struct Location {
     y: usize,
 }
 
-#[derive(Default)]
 pub struct Editor {
     should_quit: bool,
     location: Location,
@@ -26,50 +25,69 @@ pub struct Editor {
 }
 
 impl Editor {
-    pub fn run(&mut self) {
-        Terminal::init().unwrap();
 
-        // Check for env vars and if files passed load it into view
-        self.load_file().unwrap();
+    pub fn new() -> Result<Self, Error> {
 
-        let result = self.repl();
-        Terminal::terminate().unwrap();
-        result.unwrap();
+        let current_hook = std::panic::take_hook();
+
+        std::panic::set_hook(Box::new( move |panic_info| {
+            let _ = Terminal::terminate();
+            current_hook(panic_info);
+        }));
+
+        Terminal::init()?;
+
+        let mut view = View::default();
+        Self::load_file(&mut view);
+
+        Ok(Editor{
+            should_quit: false,
+            location: Location::default(),
+            view
+        })
     }
 
-    fn repl(&mut self) -> Result<(), std::io::Error> {
+    pub fn run(&mut self) {
+
         self.location = Location { x: 0, y: 0 };
 
         loop {
-            self.refresh_screen()?;
+            self.refresh_screen();
             if self.should_quit {
                 break;
             }
-            let event = read()?;
-            self.evaluate_event(&event)?;
+            match read() {
+                Ok(event) => {
+                    self.evaluate_event(&event);
+                }
+
+                Err(error) => {
+                    #[cfg(debug_assertions)]
+                    {
+                        panic!("Could no read event: {error:?}");
+                    }
+                }
+            }
         }
 
-        Ok(())
     }
 
-    fn load_file(&mut self) -> Result<(), std::io::Error> {
+    fn load_file(view: &mut View) {
         let env_vars: Vec<String> = std::env::args().collect();
 
         if env_vars.len() == 1 {
-            return Ok(());
+            return;
         }
 
         if let Some(name) = env_vars.get(1) {
-            self.view.load(name)?;
+            view.load(name);
         }
 
         // For now i will ignore everything past the file name
-
-        Ok(())
     }
 
-    fn move_point(&mut self, code: KeyCode) -> Result<(), std::io::Error> {
-        let TerminalSize { columns, rows } = Terminal::size()?;
+    fn move_point(&mut self, code: KeyCode) {
+        let TerminalSize { columns, rows } = Terminal::size().unwrap_or_default();
         let Location { mut x, mut y } = self.location;
 
         match code {
@@ -109,11 +127,9 @@ impl Editor {
         }
 
         self.location = Location { x, y };
-
-        Ok(())
     }
 
-    fn evaluate_event(&mut self, event: &Event) -> Result<(), std::io::Error> {
+    fn evaluate_event(&mut self, event: &Event) {
         match event {
             Key(KeyEvent {
                 code,
@@ -126,7 +142,7 @@ impl Editor {
                 }
 
                 Left | Right | Up | Down | Home | End | PageUp | PageDown => {
-                    self.move_point(*code)?;
+                    self.move_point(*code);
                 }
 
                 _ => (),
@@ -140,23 +156,30 @@ impl Editor {
 
             _ => (),
         }
-
-        Ok(())
     }
-    fn refresh_screen(&mut self) -> Result<(), std::io::Error> {
-        Terminal::hide_caret()?;
+
+    fn refresh_screen(&mut self) {
+        let _ = Terminal::hide_caret();
         if self.should_quit {
-            Terminal::clear_screen()?;
+            let _ = Terminal::clear_screen();
             println!("Chao!");
         } else {
-            self.view.render()?;
-            Terminal::move_caret_to(CaretPosition {
+            self.view.render();
+            let _ = Terminal::move_caret_to(CaretPosition {
                 column: self.location.x,
                 row: self.location.y,
-            })?;
+            });
         }
-        Terminal::show_caret()?;
-        Terminal::draw()?;
-        Ok(())
+        let _ = Terminal::show_caret();
+        let _ = Terminal::draw();
+    }
+}
+
+impl Drop for Editor {
+    fn drop(&mut self) {
+        let _ = Terminal::terminate();
+        if self.should_quit {
+            let _ = Terminal::print("Chaos!\r\n");
+        }
     }
 }

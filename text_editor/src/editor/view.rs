@@ -24,18 +24,16 @@ impl Default for View {
 }
 
 impl View {
-    pub fn render(&mut self) -> Result<(), std::io::Error> {
+    pub fn render(&mut self) {
         if !self.needs_redraw {
-            return Ok(());
+            return;
         }
 
-        self.draw_rows()?;
-        self.dump_buffer()?;
-        self.draw_welcome_message()?;
+        self.draw_rows();
+        self.dump_buffer();
+        self.draw_welcome_message();
 
         self.needs_redraw = false;
-
-        Ok(())
     }
 
     pub fn resize(&mut self, new_size: TerminalSize) {
@@ -43,29 +41,25 @@ impl View {
         self.size = new_size;
     }
 
-    fn draw_rows(&self) -> Result<(), std::io::Error> {
-        Self::caret_to_start()?;
+    fn draw_rows(&self) {
+        Self::caret_to_start();
         for row in 0..self.size.rows {
-            Self::render_line(row, "~")?;
+            Self::render_line(row, "~");
         }
-        Self::caret_to_start()?;
-
-        Ok(())
+        Self::caret_to_start();
     }
 
-    pub fn load(&mut self, file_name: &str) -> Result<(), std::io::Error> {
-        let context = std::fs::read_to_string(file_name)?;
-
-        self.buffer.clear();
-
-        for line in context.lines() {
-            self.buffer.push(line.to_string());
+    pub fn load(&mut self, file_name: &str) {
+        if let Ok(context) = std::fs::read_to_string(file_name) {
+            self.buffer.clear();
+    
+            for line in context.lines() {
+                self.buffer.push(line.to_string());
+            }
         }
-
-        Ok(())
     }
 
-    fn dump_buffer(&self) -> Result<(), std::io::Error> {
+    fn dump_buffer(&self) {
         for (row, line_data) in self.buffer.data.iter().enumerate() {
             let width = self.size.columns;
             let truncated_line = if line_data.len() < width {
@@ -74,17 +68,15 @@ impl View {
                 &line_data[0..width]
             };
 
-            Self::render_line(row, truncated_line)?;
+            Self::render_line(row, truncated_line);
         }
-
-        Ok(())
     }
 
     /// Draws welcome message only if nothing else was passed to the buffer
-    fn draw_welcome_message(&mut self) -> Result<(), std::io::Error> {
+    fn draw_welcome_message(&mut self) {
         // If buffer is empty we just draw welcome message
         if !self.buffer.is_empty() {
-            return Ok(());
+            return;
         }
 
         let mut render_row = self.size.rows / 3;
@@ -93,13 +85,14 @@ impl View {
         let blank_line =
             String::from("|") + &" ".repeat(length_of_terminal.saturating_sub(2)) + "|";
 
+
         // Draw top bar
-        Self::render_line(render_row, &"=".repeat(length_of_terminal))?;
+        Self::render_line(render_row, &"=".repeat(length_of_terminal));
         render_row += 1;
 
         // Draw sides
         for _ in 0..5 {
-            Self::render_line(render_row, &blank_line)?;
+            Self::render_line(render_row, &blank_line);
             render_row += 1;
         }
 
@@ -119,33 +112,29 @@ impl View {
         let center_line = format!("|{padding_left}{EDITOR_NAME} {EDITOR_VERSION}{padding_right}|");
 
         if center_line.len() >= self.size.columns {
-            Self::render_line(render_row, &center_line)?;
+            Self::render_line(render_row, &center_line);
         } else {
-            Self::render_line(render_row, &blank_line)?;
+            Self::render_line(render_row, &blank_line);
         }
 
         render_row += 1;
         // Draw sides
         for _ in 0..5 {
-            Self::render_line(render_row, &blank_line)?;
+            Self::render_line(render_row, &blank_line);
             render_row += 1;
         }
 
         // Draw top bar
-        Self::render_line(render_row, &"=".repeat(length_of_terminal))?;
-
-        Ok(())
+        Self::render_line(render_row, &"=".repeat(length_of_terminal));
     }
 
-    fn render_line(row: usize, string_to_render: &str) -> Result<(), std::io::Error> {
-        Terminal::move_caret_to(CaretPosition { column: 0, row })?;
-        Terminal::clear_line()?;
-        Terminal::print(string_to_render)?;
-        Ok(())
+    fn render_line(row: usize, string_to_render: &str) {
+        let result = Terminal::print_row(row, string_to_render);
+        debug_assert!(result.is_ok(), "Failed to render the line!");
     }
 
-    fn caret_to_start() -> Result<(), std::io::Error> {
-        Terminal::move_caret_to(CaretPosition { column: 0, row: 0 })?;
-        Ok(())
+    fn caret_to_start() {
+        let result = Terminal::move_caret_to(CaretPosition { column: 0, row: 0 });
+        debug_assert!(result.is_ok(), "Failed to move caret to start position");
     }
 }

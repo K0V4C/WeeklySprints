@@ -1,11 +1,7 @@
-use std::io::{Write, stdout};
+use std::io::{stdout, Error, Write};
 
 use crossterm::{
-    Command,
-    cursor::{Hide, MoveTo, SavePosition, Show},
-    execute, queue,
-    style::Print,
-    terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode},
+    cursor::{Hide, MoveTo, SavePosition, Show}, execute, queue, style::Print, terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen}, Command
 };
 
 #[derive(Copy, Clone, Default, Debug)]
@@ -25,11 +21,18 @@ pub struct Terminal {}
 impl Terminal {
     pub fn init() -> Result<(), std::io::Error> {
         enable_raw_mode()?;
-        Self::clear_screen()
+        Self::enter_alternate_screen()?;
+        Self::clear_screen()?;
+        Self::draw()?;
+        Ok(())
     }
 
     pub fn terminate() -> Result<(), std::io::Error> {
-        disable_raw_mode()
+        Self::exit_alternate_screen()?;
+        Self::show_caret()?;
+        Self::draw()?;
+        disable_raw_mode()?;
+        Ok(())
     }
 
     pub fn clear_screen() -> Result<(), std::io::Error> {
@@ -40,6 +43,17 @@ impl Terminal {
 
     pub fn clear_line() -> Result<(), std::io::Error> {
         Self::queue_command(Clear(ClearType::CurrentLine))?;
+        Ok(())
+    }
+
+
+    pub fn enter_alternate_screen() -> Result<(), Error> {
+        Self::queue_command(EnterAlternateScreen)?;
+        Ok(())
+    }
+
+    pub fn exit_alternate_screen() -> Result<(), Error> {
+        Self::queue_command(LeaveAlternateScreen)?;
         Ok(())
     }
 
@@ -93,6 +107,13 @@ impl Terminal {
         #[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
         let y = caret_positon.row as u16;
         Self::queue_command(MoveTo(x, y))?;
+        Ok(())
+    }
+
+    pub fn print_row(row: usize, line_text: &str) -> Result<(), std::io::Error> {
+        Self::move_caret_to(CaretPosition { column: 0, row })?;
+        Self::clear_line()?;
+        Self::print(line_text)?;
         Ok(())
     }
 

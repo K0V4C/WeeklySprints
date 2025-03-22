@@ -1,3 +1,4 @@
+
 All credit goes to: https://www.flenker.blog/hecto/
 
 As menitioned in the first line this is a project follwing a blog post from flenker on how to make Vim-like text editor from scratch using Rust.
@@ -10,6 +11,8 @@ Current state:
 
 day 1: Caret movement + welcome message
 day 2: Truncate lines + resizing
+day 2: Better error handling
 
 Bugs: 
 1. ghost image of auto resizing before applying propper view
+2. random crash when resizing

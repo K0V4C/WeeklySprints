@@ -1,17 +1,16 @@
 mod terminal;
+mod view;
 
 use std::cmp::min;
 
 use crossterm::event::{
-    Event::{self, Key},
+    Event::{self, Key, Resize},
     KeyCode::{self, Char, Down, End, Home, Left, PageDown, PageUp, Right, Up},
     KeyEvent, KeyEventKind, KeyModifiers, read,
 };
 
 use terminal::{CaretPosition, Terminal, TerminalSize};
-
-const EDITOR_NAME: &str = "HECTO";
-const EDITOR_VERSION: &str = env!("CARGO_PKG_VERSION");
+use view::View;
 
 #[derive(Clone, Copy, Default)]
 struct Location {
@@ -23,20 +22,24 @@ struct Location {
 pub struct Editor {
     should_quit: bool,
     location: Location,
+    view: View,
 }
 
 impl Editor {
     pub fn run(&mut self) {
         Terminal::init().unwrap();
+
+        // Check for env vars and if files passed load it into view
+        self.load_file().unwrap();
+
         let result = self.repl();
         Terminal::terminate().unwrap();
         result.unwrap();
     }
 
     fn repl(&mut self) -> Result<(), std::io::Error> {
-        Self::draw_rows()?;
-        Self::draw_welcome_message()?;
-        Self::caret_to_tilde()?;
+        self.location = Location { x: 0, y: 0 };
+
         loop {
             self.refresh_screen()?;
             if self.should_quit {
@@ -45,6 +48,22 @@ impl Editor {
             let event = read()?;
             self.evaluate_event(&event)?;
         }
+
+        Ok(())
+    }
+
+    fn load_file(&mut self) -> Result<(), std::io::Error> {
+        let env_vars: Vec<String> = std::env::args().collect();
+
+        if env_vars.len() == 1 {
+            return Ok(());
+        }
+
+        if let Some(name) = env_vars.get(1) {
+            self.view.load(name)?;
+        }
+
+        // For now i will ignore everything past the file name
 
         Ok(())
     }
@@ -95,14 +114,13 @@ impl Editor {
     }
 
     fn evaluate_event(&mut self, event: &Event) -> Result<(), std::io::Error> {
-        if let Key(KeyEvent {
-            code,
-            modifiers,
-            kind: KeyEventKind::Press, // This is so it works on windows
-            ..
-        }) = event
-        {
-            match code {
+        match event {
+            Key(KeyEvent {
+                code,
+                modifiers,
+                kind: KeyEventKind::Press, // This is so it works on windows
+                ..
+            }) => match code {
                 Char('q') if *modifiers == KeyModifiers::CONTROL => {
                     self.should_quit = true;
                 }
@@ -112,16 +130,26 @@ impl Editor {
                 }
 
                 _ => (),
+            },
+
+            Resize(columns, rows) => {
+                let columns = *columns as usize;
+                let rows = *rows as usize;
+                self.view.resize(TerminalSize { columns, rows });
             }
+
+            _ => (),
         }
+
         Ok(())
     }
-    fn refresh_screen(&self) -> Result<(), std::io::Error> {
+    fn refresh_screen(&mut self) -> Result<(), std::io::Error> {
         Terminal::hide_caret()?;
         if self.should_quit {
             Terminal::clear_screen()?;
             println!("Chao!");
         } else {
+            self.view.render()?;
             Terminal::move_caret_to(CaretPosition {
                 column: self.location.x,
                 row: self.location.y,
@@ -129,66 +157,6 @@ impl Editor {
         }
         Terminal::show_caret()?;
         Terminal::draw()?;
-        Ok(())
-    }
-
-    fn caret_to_start() -> Result<(), std::io::Error> {
-        Terminal::move_caret_to(CaretPosition { column: 0, row: 0 })
-    }
-
-    fn caret_to_tilde() -> Result<(), std::io::Error> {
-        Terminal::move_caret_to(CaretPosition { column: 1, row: 0 })
-    }
-
-    fn draw_rows() -> Result<(), std::io::Error> {
-        Self::caret_to_start()?;
-        for _ in 0..Terminal::size()?.rows {
-            Terminal::clear_line()?;
-            Terminal::print("~\r\n")?;
-        }
-        Terminal::print("~")?;
-        Self::caret_to_start()?;
-
-        Ok(())
-    }
-
-    fn draw_welcome_message() -> Result<(), std::io::Error> {
-        let size = Terminal::size()?;
-        let start_point = size.rows / 3;
-        let length_of_terminal = size.columns;
-
-        let blank_line =
-            String::from("|") + " ".repeat(length_of_terminal.saturating_sub(2)).as_str() + "|";
-
-        // Draw top bar
-        Terminal::move_caret_to(CaretPosition {
-            column: 0,
-            row: start_point,
-        })?;
-        Terminal::print("=".repeat(length_of_terminal).as_str())?;
-
-        // Draw sides
-        for _ in 0..5 {
-            Terminal::print(blank_line.as_str())?;
-        }
-
-        // Draw Name and version number
-        let half_width =
-            ((length_of_terminal - EDITOR_NAME.len() - EDITOR_VERSION.len()).saturating_sub(3)) / 2;
-        let blank_space = " ".repeat(half_width);
-
-        let center_line = format!("|{blank_space}{EDITOR_NAME} {EDITOR_VERSION}{blank_space}|");
-
-        Terminal::print(center_line.as_str())?;
-
-        // Draw sides
-        for _ in 0..5 {
-            Terminal::print(blank_line.as_str())?;
-        }
-
-        // Draw bottom bar
-        Terminal::print("=".repeat(length_of_terminal).as_str())?;
-
         Ok(())
     }
 }

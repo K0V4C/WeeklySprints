@@ -8,7 +8,7 @@ use crossterm::{
     terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode},
 };
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default, Debug)]
 pub struct TerminalSize {
     pub columns: usize,
     pub rows: usize,

@@ -6,4 +6,10 @@ Somehow this project really grew big and will take multiple days to finish, it i
 
 In the end final projects will be similar but I am more lazy and quality of this tutorial is unreal.
 
-Current state: Caret movement + welcome message
+Current state: 
+
+day 1: Caret movement + welcome message
+day 2: Truncate lines + resizing
+
+Bugs: 
+1. ghost image of auto resizing before applying propper view

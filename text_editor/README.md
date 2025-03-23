@@ -12,6 +12,7 @@ day 1: Caret movement + welcome message
 day 2: Truncate lines + resizing
 day 2: Better error handling
 day 3: scrolling
+day 3: complex caret movement
 
 Bugs: 
 1. ghost image of auto resizing before applying propper view

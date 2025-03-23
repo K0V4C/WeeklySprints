@@ -4,6 +4,7 @@ mod location;
 mod messages;
 
 use buffer::Buffer;
+use line::Line;
 use location::Location;
 use messages::Message;
 
@@ -64,15 +65,28 @@ impl View {
     }
 
     fn move_text_location(&mut self, direction: &Direction) {
-        let TerminalSize { columns, rows } = Terminal::size().unwrap_or_default();
+        let TerminalSize { rows, .. } = Terminal::size().unwrap_or_default();
         let Location { mut x, mut y } = self.location;
 
         match direction {
             Direction::Left => {
-                x = x.saturating_sub(1);
+                if x > 0 {
+                    x -= 1;
+                } else if y > 0 {
+                    y -= 1;
+                    x = self.buffer.data.get(y).map_or(0, Line::get_len);
+                }
             }
 
             Direction::Right => {
+                let width = self.buffer.data.get(y).map_or(0, Line::get_len);
+                if x <  width {
+                    x += 1;
+                } else {
+                    y = y.saturating_add(1);
+                    x = 0;
+                }
+
                 x = x.saturating_add(1);
             }
 
@@ -89,17 +103,23 @@ impl View {
             }
 
             Direction::End => {
-                x = columns.saturating_sub(1);
+                x = self.buffer.data.get(y).map_or(0, Line::get_len);
             }
 
             Direction::PageUp => {
-                y = 0;
+                y = y.saturating_sub(rows).saturating_sub(1);
             }
 
             Direction::PageDown => {
-                y = rows.saturating_sub(1);
+                y = y.saturating_add(rows).saturating_sub(1);
             }
         }
+
+        // snap x to proper position
+        x = std::cmp::min(self.buffer.data.get(y).map_or(0, Line::get_len), x);
+
+        // snap y to proper position
+        y = std::cmp::min(y, self.buffer.get_number_of_lines());
 
         self.location = Location { x, y };
         self.scroll_location_into_view();

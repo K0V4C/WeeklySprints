@@ -17,4 +17,8 @@ impl Buffer {
     pub fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
+    
+    pub fn get_number_of_lines(&self) -> usize {
+        self.data.len()
+    }
 }

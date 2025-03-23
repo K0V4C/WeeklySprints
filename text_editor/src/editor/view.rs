@@ -1,8 +1,13 @@
 mod buffer;
+mod line;
+mod location;
+mod messages;
 
 use buffer::Buffer;
+use location::Location;
+use messages::Message;
 
-use super::terminal::{CaretPosition, Terminal, TerminalSize};
+use super::{editor_command::{Direction, EditorCommand}, terminal::{CaretPosition, Terminal, TerminalSize}};
 
 const EDITOR_NAME: &str = "HECTO";
 const EDITOR_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -11,6 +16,8 @@ pub struct View {
     buffer: Buffer,
     needs_redraw: bool,
     size: TerminalSize,
+    location: Location,
+    scroll_offset: Location
 }
 
 impl Default for View {
@@ -19,6 +26,8 @@ impl Default for View {
             buffer: Buffer::default(),
             needs_redraw: true,
             size: Terminal::size().unwrap_or_default(),
+            location: Location::default(),
+            scroll_offset: Location::default()
         }
     }
 }
@@ -36,9 +45,112 @@ impl View {
         self.needs_redraw = false;
     }
 
+    pub fn handle_command(&mut self, command: EditorCommand) {
+        match command {
+            EditorCommand::Move(direction) => self.move_text_location(&direction),
+            EditorCommand::Resize(size) => self.resize(size),
+            EditorCommand::Quit => {}
+        }
+    }
+
     pub fn resize(&mut self, new_size: TerminalSize) {
-        self.needs_redraw = true;
         self.size = new_size;
+        self.scroll_location_into_view();
+        self.needs_redraw = true;
+    }
+
+    pub fn get_position(&self) -> CaretPosition {
+        self.location.substract(&self.scroll_offset).into()
+    }
+
+    fn move_text_location(&mut self, direction: &Direction) {
+        let TerminalSize { columns, rows } = Terminal::size().unwrap_or_default();
+        let Location { mut x, mut y } = self.location;
+
+        match direction {
+            Direction::Left => {
+                x = x.saturating_sub(1);
+            }
+
+            Direction::Right => {
+                x = x.saturating_add(1);
+            }
+
+            Direction::Up => {
+                y = y.saturating_sub(1);
+            }
+
+            Direction::Down => {
+                y = y.saturating_add(1);
+            }
+
+            Direction::Home => {
+                x = 0;
+            }
+
+            Direction::End => {
+                x = columns.saturating_sub(1);
+            }
+
+            Direction::PageUp => {
+                y = 0;
+            }
+
+            Direction::PageDown => {
+                y = rows.saturating_sub(1);
+            }
+        }
+
+        self.location = Location { x, y };
+        self.scroll_location_into_view();
+    }
+
+    fn scroll_location_into_view(&mut self) {
+
+        let Location { x , y } = self.location;
+        let TerminalSize { columns, rows } = self.size;
+
+        let mut offset_changed = false;
+
+        // This logic took way too long to figure out
+
+        // Scroll vertically
+        if y < self.scroll_offset.y {
+            self.scroll_offset.y = y;
+            offset_changed = true;
+        } else if y >= self.scroll_offset.y.saturating_add(rows) {
+            self.scroll_offset.y = y.saturating_sub(rows).saturating_add(1);
+            offset_changed = true;
+        }
+
+        // Scroll horizontaly
+        if x < self.scroll_offset.x {
+            self.scroll_offset.x = x;
+            offset_changed = true;
+        } else if x >= self.scroll_offset.x.saturating_add(columns) {
+            self.scroll_offset.x = x.saturating_sub(columns).saturating_add(1);
+            offset_changed = true;
+        }
+
+        self.needs_redraw = offset_changed;
+    }
+
+    fn draw_welcome_message(&self) {
+
+        // If buffer is empty we just draw welcome message
+        if !self.buffer.is_empty() {
+            return;
+        }
+
+        let welcome_message_buffer = Message::build_welcome_message(self.size, EDITOR_NAME, EDITOR_VERSION);
+
+        let mut start_render_line = self.size.rows / 3;
+
+        for line in welcome_message_buffer.data {
+            // Cut off is here if someone wants to build different welcome message they dont have to worry about it fitting perfectly
+            Self::render_line(start_render_line, &line.get(0..self.size.columns));
+            start_render_line += 1;
+        }
     }
 
     fn draw_rows(&self) {
@@ -52,81 +164,28 @@ impl View {
     pub fn load(&mut self, file_name: &str) {
         if let Ok(context) = std::fs::read_to_string(file_name) {
             self.buffer.clear();
-    
+
             for line in context.lines() {
-                self.buffer.push(line.to_string());
+                self.buffer.push(line);
             }
         }
     }
 
     fn dump_buffer(&self) {
-        for (row, line_data) in self.buffer.data.iter().enumerate() {
-            let width = self.size.columns;
-            let truncated_line = if line_data.len() < width {
-                line_data
-            } else {
-                &line_data[0..width]
-            };
 
-            Self::render_line(row, truncated_line);
+        let (width, height) = (self.size.columns, self.size.rows);
+
+        let top = self.scroll_offset.y;
+
+        for current_row in 0..height {
+            if let Some(line) = self.buffer.data.get(current_row.saturating_add(top)) {
+                let left = self.scroll_offset.x;
+                let right = self.scroll_offset.x.saturating_add(width);
+                Self::render_line(current_row, &line.get(left..right));
+            }
         }
     }
 
-    /// Draws welcome message only if nothing else was passed to the buffer
-    fn draw_welcome_message(&mut self) {
-        // If buffer is empty we just draw welcome message
-        if !self.buffer.is_empty() {
-            return;
-        }
-
-        let mut render_row = self.size.rows / 3;
-        let length_of_terminal = self.size.columns;
-
-        let blank_line =
-            String::from("|") + &" ".repeat(length_of_terminal.saturating_sub(2)) + "|";
-
-
-        // Draw top bar
-        Self::render_line(render_row, &"=".repeat(length_of_terminal));
-        render_row += 1;
-
-        // Draw sides
-        for _ in 0..5 {
-            Self::render_line(render_row, &blank_line);
-            render_row += 1;
-        }
-
-        // Draw Name and version number
-        let blank_space =
-            (length_of_terminal - EDITOR_NAME.len() - EDITOR_VERSION.len()).saturating_sub(3);
-
-        let (padding_left, padding_right) = if blank_space % 2 == 0 {
-            (&" ".repeat(blank_space / 2), &" ".repeat(blank_space / 2))
-        } else {
-            (
-                &" ".repeat(blank_space / 2 + 1),
-                &" ".repeat(blank_space / 2),
-            )
-        };
-
-        let center_line = format!("|{padding_left}{EDITOR_NAME} {EDITOR_VERSION}{padding_right}|");
-
-        if center_line.len() >= self.size.columns {
-            Self::render_line(render_row, &center_line);
-        } else {
-            Self::render_line(render_row, &blank_line);
-        }
-
-        render_row += 1;
-        // Draw sides
-        for _ in 0..5 {
-            Self::render_line(render_row, &blank_line);
-            render_row += 1;
-        }
-
-        // Draw top bar
-        Self::render_line(render_row, &"=".repeat(length_of_terminal));
-    }
 
     fn render_line(row: usize, string_to_render: &str) {
         let result = Terminal::print_row(row, string_to_render);

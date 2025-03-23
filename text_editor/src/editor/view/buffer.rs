@@ -1,6 +1,8 @@
+use super::line::Line;
+
 #[derive(Default)]
 pub struct Buffer {
-    pub data: Vec<String>,
+    pub data: Vec<Line>,
 }
 
 impl Buffer {
@@ -8,8 +10,8 @@ impl Buffer {
         self.data.clear();
     }
 
-    pub fn push(&mut self, string: String) {
-        self.data.push(string);
+    pub fn push(&mut self, string: &str) {
+        self.data.push(Line::from(string));
     }
 
     pub fn is_empty(&self) -> bool {

@@ -17,3 +17,6 @@ day 3: complex caret movement
 Bugs: 
 1. ghost image of auto resizing before applying propper view
 2. random crash when resizing
+3. Pressing RIGHT goes twice FIXED
+4. Emoji scrolling still doesnt work as it should
+5. Weird bug when going full screen, somehow related to u8

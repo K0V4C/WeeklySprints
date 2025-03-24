@@ -10,54 +10,48 @@ pub enum Direction {
     Home,
     End,
     PageUp,
-    PageDown
+    PageDown,
 }
 
 pub enum EditorCommand {
     Move(Direction),
     Resize(TerminalSize),
-    Quit
+    Quit,
 }
 
 impl TryFrom<Event> for EditorCommand {
     type Error = String;
 
     fn try_from(event: Event) -> Result<Self, Self::Error> {
-
-
         match event {
+            Event::Key(KeyEvent {
+                code, modifiers, ..
+            }) => match (code, modifiers) {
+                (KeyCode::Char('q'), KeyModifiers::CONTROL) => Ok(Self::Quit),
 
-           Event::Key(KeyEvent{
-               code, modifiers, ..
-           }) => match (code, modifiers) {
+                (KeyCode::Up, _) => Ok(Self::Move(Direction::Up)),
+                (KeyCode::Down, _) => Ok(Self::Move(Direction::Down)),
+                (KeyCode::Left, _) => Ok(Self::Move(Direction::Left)),
+                (KeyCode::Right, _) => Ok(Self::Move(Direction::Right)),
+                (KeyCode::PageUp, _) => Ok(Self::Move(Direction::PageUp)),
+                (KeyCode::PageDown, _) => Ok(Self::Move(Direction::PageDown)),
+                (KeyCode::Home, _) => Ok(Self::Move(Direction::Home)),
+                (KeyCode::End, _) => Ok(Self::Move(Direction::End)),
 
-               (KeyCode::Char('q'), KeyModifiers::CONTROL) => Ok(Self::Quit),
+                _ => Err(format!("Key code not supported: {code:?}")),
+            },
 
-               (KeyCode::Up, _) => Ok(Self::Move(Direction::Up)),
-               (KeyCode::Down, _) => Ok(Self::Move(Direction::Down)),
-               (KeyCode::Left, _) => Ok(Self::Move(Direction::Left)),
-               (KeyCode::Right, _) => Ok(Self::Move(Direction::Right)),
-               (KeyCode::PageUp, _) => Ok(Self::Move(Direction::PageUp)),
-               (KeyCode::PageDown, _) => Ok(Self::Move(Direction::PageDown)),
-               (KeyCode::Home, _) => Ok(Self::Move(Direction::Home)),
-               (KeyCode::End, _) => Ok(Self::Move(Direction::End)),
+            Event::Resize(width_u16, heigth_16) => {
+                let height = heigth_16 as usize;
+                let width = width_u16 as usize;
 
-               _ => Err(format!("Key code not supported: {code:?}")),
-           },
+                Ok(Self::Resize(TerminalSize {
+                    columns: width,
+                    rows: height,
+                }))
+            }
 
-           Event::Resize(width_u16, heigth_16 ) => {
-               let height = heigth_16 as usize;
-               let width = width_u16 as usize;
-
-               Ok(Self::Resize(TerminalSize { columns: width, rows: height }))
-           }
-
-
-           _ => Err(format!("Event not supported: {event:?}")),
-
+            _ => Err(format!("Event not supported: {event:?}")),
         }
-
-
     }
-
 }

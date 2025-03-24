@@ -1,7 +1,14 @@
-use std::io::{stdout, Error, Write};
+use std::io::{Error, Write, stdout};
 
 use crossterm::{
-    cursor::{Hide, MoveTo, SavePosition, Show}, execute, queue, style::Print, terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen}, Command
+    Command,
+    cursor::{Hide, MoveTo, SavePosition, Show},
+    execute, queue,
+    style::Print,
+    terminal::{
+        Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode,
+        enable_raw_mode,
+    },
 };
 
 #[derive(Copy, Clone, Default, Debug)]
@@ -10,10 +17,19 @@ pub struct TerminalSize {
     pub rows: usize,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct CaretPosition {
     pub column: usize,
     pub row: usize,
+}
+
+impl CaretPosition {
+    pub const fn saturating_sub(self, other: Self) -> Self {
+        Self {
+            column: self.column.saturating_sub(other.column),
+            row: self.row.saturating_sub(other.row),
+        }
+    }
 }
 
 pub struct Terminal {}
@@ -45,7 +61,6 @@ impl Terminal {
         Self::queue_command(Clear(ClearType::CurrentLine))?;
         Ok(())
     }
-
 
     pub fn enter_alternate_screen() -> Result<(), Error> {
         Self::queue_command(EnterAlternateScreen)?;

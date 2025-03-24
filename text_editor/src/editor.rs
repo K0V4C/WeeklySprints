@@ -1,13 +1,11 @@
-mod terminal;
 mod editor_command;
+mod terminal;
 mod view;
 
-use std::io::Error;
 use crossterm::event::Event;
+use std::io::Error;
 
-use crossterm::event::{
-    KeyEvent, KeyEventKind, read,
-};
+use crossterm::event::{KeyEvent, KeyEventKind, read};
 
 use editor_command::EditorCommand;
 use terminal::Terminal;
@@ -19,12 +17,10 @@ pub struct Editor {
 }
 
 impl Editor {
-
     pub fn new() -> Result<Self, Error> {
-
         let current_hook = std::panic::take_hook();
 
-        std::panic::set_hook(Box::new( move |panic_info| {
+        std::panic::set_hook(Box::new(move |panic_info| {
             let _ = Terminal::terminate();
             current_hook(panic_info);
         }));
@@ -34,9 +30,9 @@ impl Editor {
         let mut view = View::default();
         Self::load_file(&mut view);
 
-        Ok(Editor{
+        Ok(Editor {
             should_quit: false,
-            view
+            view,
         })
     }
 
@@ -59,7 +55,6 @@ impl Editor {
                 }
             }
         }
-
     }
 
     fn load_file(view: &mut View) {
@@ -76,19 +71,20 @@ impl Editor {
         // For now i will ignore everything past the file name
     }
 
-
     fn evaluate_event(&mut self, event: Event) {
-
         let should_process = match &event {
-            Event::Key(KeyEvent { kind, ..}) => kind == &KeyEventKind::Press,
-            Event::Resize(_,_) => true,
-            _ => false
+            Event::Key(KeyEvent { kind, .. }) => kind == &KeyEventKind::Press,
+            Event::Resize(_, _) => true,
+            _ => false,
         };
 
         // If there is no work to be done dont go into details
         #[cfg(debug_assertions)]
         {
-            assert!(should_process, "Recieved and discarded unsuported non-press event");
+            assert!(
+                should_process,
+                "Recieved and discarded unsuported non-press event"
+            );
         }
 
         match EditorCommand::try_from(event) {
@@ -98,7 +94,7 @@ impl Editor {
                 } else {
                     self.view.handle_command(command);
                 }
-            },
+            }
             Err(err) => {
                 #[cfg(debug_assertions)]
                 {
@@ -111,7 +107,7 @@ impl Editor {
     fn refresh_screen(&mut self) {
         let _ = Terminal::hide_caret();
         self.view.render();
-        let _ = Terminal::move_caret_to(self.view.get_position());
+        let _ = Terminal::move_caret_to(self.view.caret_position());
         let _ = Terminal::show_caret();
         let _ = Terminal::draw();
     }

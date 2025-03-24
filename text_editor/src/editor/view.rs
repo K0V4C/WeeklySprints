@@ -51,7 +51,7 @@ impl View {
         }
 
         self.draw_rows();
-        self.dump_buffer();
+        self.draw_buffer();
         self.draw_welcome_message();
 
         self.needs_redraw = false;
@@ -96,7 +96,7 @@ impl View {
         let _ = Terminal::move_caret_to(CaretPosition { column: 0, row: 0 });
     }
 
-    fn dump_buffer(&self) {
+    fn draw_buffer(&self) {
         let (width, height) = (self.size.columns, self.size.rows);
 
         if width == 0 || height == 0 {

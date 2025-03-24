@@ -13,6 +13,7 @@ day 2: Truncate lines + resizing
 day 2: Better error handling
 day 3: scrolling
 day 3: complex caret movement
+day 4: text viewer almost done weird bug with cluster emojies
 
 Bugs: 
 1. ghost image of auto resizing before applying propper view

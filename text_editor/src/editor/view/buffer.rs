@@ -20,7 +20,7 @@ impl Buffer {
         }
 
         if location.line_index == self.data.len() {
-            self.data.push(Line::from(" "));
+            self.data.push(Line::from(""));
         }
 
         if let Some(selected_line) = self.data.get_mut(location.line_index) {
@@ -29,15 +29,32 @@ impl Buffer {
     }
 
     pub fn delete_character_at(&mut self, location: Location) {
+        // Safeguard, should not happen
         if location.line_index > self.data.len() {
             return;
         }
 
-        // TODO: Add  deletion of lines themselves and concating
+        // Backspace already transalted into delete so it only one case now
+        // Delete when caret is at the end of the line
 
-        if let Some(selected_line) = self.data.get_mut(location.line_index) {
+        if self.data.get_mut(location.line_index).is_none() {
+            return;
+        }
+
+        let number_of_lines = self.get_number_of_lines();
+        let selected_line = self.data.get_mut(location.line_index).unwrap();
+        let line_length = selected_line.grapheme_count();
+
+        // Deletion at non specific point
+        if location.grapheme_index != line_length {
             selected_line.delete_character(location.grapheme_index);
-        };
+        } else if location.grapheme_index == line_length && location.line_index.saturating_add(1) < number_of_lines {
+            // Deletion at the end of the line
+            let next_line = self.data.remove(location.line_index.saturating_add(1));
+            // This is the same code for `selected_line` had to be written this way so the reference from before would be dropped
+            let selected_line = self.data.get_mut(location.line_index).unwrap();
+            selected_line.concat(next_line);
+        }
     }
 
     pub fn get_number_of_lines(&self) -> usize {

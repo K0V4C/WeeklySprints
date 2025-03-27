@@ -60,6 +60,12 @@ impl Line {
 
         self.fragments = Self::str_to_fragments(&result);
     }
+    
+    pub fn concat(&mut self, concat_line: Line) {
+        for fragment in concat_line.fragments {
+            self.fragments.push(fragment);
+        }
+    }
 
     pub fn from(line_str: &str) -> Self {
         let fragments = Self::str_to_fragments(line_str);

@@ -16,7 +16,6 @@ impl GraphemeWidth {
             GraphemeWidth::Full => other.saturating_add(2),
         }
     }
-
 }
 
 pub struct TextFragment {
@@ -30,42 +29,33 @@ pub struct Line {
 }
 
 impl Line {
+    pub fn add_character_to_line(&mut self, chr: char, at: usize) {
+        let mut result = String::new();
+
+        for (index, fragment) in self.fragments.iter().enumerate() {
+            if index == at {
+                result.push(chr);
+            }
+
+            result.push_str(&fragment.grapheme);
+        }
+
+        if at >= self.fragments.len() {
+            result.push(chr);
+        }
+
+        self.fragments = Self::str_to_fragments(&result);
+    }
+
     pub fn from(line_str: &str) -> Self {
-        let fragments = line_str
-            .graphemes(true)
-            .map(|grapheme| {
-
-                let (rendered_width, replacement) = Self::replacement_character(grapheme).map_or_else(
-                    || {
-                        let width = grapheme.width();
-
-                        let rendered_width = match width {
-                            0| 1 => GraphemeWidth::Half,
-                            _ => GraphemeWidth::Full
-                        };
-
-                        (rendered_width, None)
-
-                    }, |replacement| (GraphemeWidth::Half, Some(replacement)));
-
-
-                TextFragment {
-                    grapheme: grapheme.to_string(),
-                    rendered_width,
-                    replacement,
-                }
-            })
-            .collect();
-
+        let fragments = Self::str_to_fragments(line_str);
         Line { fragments }
     }
 
     fn replacement_character(grapheme: &str) -> Option<char> {
-
         let width = grapheme.width();
 
         match grapheme {
-
             " " => None,
             "\t" => Some(' '),
             _ if width > 0 && grapheme.trim().is_empty() => Some('␣'),
@@ -81,10 +71,9 @@ impl Line {
 
             _ => None,
         }
-
     }
 
-    pub fn get_visable_graphmes(&self, range: Range<usize>) -> String {
+    pub fn get_visable_graphemes(&self, range: Range<usize>) -> String {
         if range.start >= range.end {
             return String::new();
         }
@@ -130,4 +119,35 @@ impl Line {
             .sum()
     }
 
+    ///////////////////////////////////////////// HELPER METHODS ////////////////////////////////////////////////
+
+    fn str_to_fragments(line_str: &str) -> Vec<TextFragment> {
+        let fragments = line_str
+            .graphemes(true)
+            .map(|grapheme| {
+                let (rendered_width, replacement) = Self::replacement_character(grapheme)
+                    .map_or_else(
+                        || {
+                            let width = grapheme.width();
+
+                            let rendered_width = match width {
+                                0 | 1 => GraphemeWidth::Half,
+                                _ => GraphemeWidth::Full,
+                            };
+
+                            (rendered_width, None)
+                        },
+                        |replacement| (GraphemeWidth::Half, Some(replacement)),
+                    );
+
+                TextFragment {
+                    grapheme: grapheme.to_string(),
+                    rendered_width,
+                    replacement,
+                }
+            })
+            .collect();
+
+        fragments
+    }
 }

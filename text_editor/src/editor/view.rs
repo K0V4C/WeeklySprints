@@ -28,6 +28,7 @@ pub struct View {
     size: TerminalSize,
     text_location: Location,
     scroll_offset: CaretPosition,
+    file_given: bool
 }
 
 impl Default for View {
@@ -38,6 +39,7 @@ impl Default for View {
             size: Terminal::size().unwrap_or_default(),
             text_location: Location::default(),
             scroll_offset: CaretPosition::default(),
+            file_given: false
         }
     }
 }
@@ -61,6 +63,9 @@ impl View {
         match command {
             EditorCommand::Move(direction) => self.move_text_location(&direction),
             EditorCommand::Resize(size) => self.resize(size),
+            EditorCommand::Input(charater) => self.add_to_buffer(charater),
+            EditorCommand::Backspace => {self.move_left(); self.delete_grapheme();}
+            EditorCommand::Delete => {self.delete_grapheme();}
             EditorCommand::Quit => {}
         }
     }
@@ -73,6 +78,7 @@ impl View {
                 self.buffer.push(line);
             }
         }
+        self.file_given = true;
     }
 
     pub fn caret_position(&self) -> CaretPosition {
@@ -110,14 +116,14 @@ impl View {
                 let left = self.scroll_offset.column;
                 let right = self.scroll_offset.column.saturating_add(width);
 
-                Self::render_line(current_row, &line.get_visable_graphmes(left..right));
+                Self::render_line(current_row, &line.get_visable_graphemes(left..right));
             }
         }
     }
 
     fn draw_welcome_message(&self) {
-        // If buffer is empty we just draw welcome message
-        if !self.buffer.is_empty() {
+        // File and no welcome
+        if self.file_given {
             return;
         }
 
@@ -130,7 +136,7 @@ impl View {
             // Cut off is here if someone wants to build different welcome message they dont have to worry about it fitting perfectly
             Self::render_line(
                 start_render_line,
-                &line.get_visable_graphmes(0..self.size.columns),
+                &line.get_visable_graphemes(0..self.size.columns),
             );
             start_render_line += 1;
         }
@@ -155,6 +161,33 @@ impl View {
         self.scroll_text_location_into_view();
     }
 
+    fn add_to_buffer(&mut self, chr: char) {
+        let old_len = self
+            .buffer
+            .data
+            .get(self.text_location.line_index)
+            .map_or(0, Line::grapheme_count);
+        self.buffer.add_character_at(chr, self.text_location);
+        let new_len = self
+            .buffer
+            .data
+            .get(self.text_location.line_index)
+            .map_or(0, Line::grapheme_count);
+
+        let delta = new_len.saturating_sub(old_len);
+
+        if delta > 0 {
+            self.move_right()
+        }
+        self.needs_redraw = true;
+    }
+    
+    fn delete_grapheme(&mut self) {
+        
+        
+        
+    }
+
     // =========================================== SCROLLING ===================================================
     fn scroll_text_location_into_view(&mut self) {
         let CaretPosition { column, row } = self.text_location_to_position();
@@ -176,7 +209,9 @@ impl View {
             false
         };
 
-        self.needs_redraw = offset_changed || self.needs_redraw;
+        if offset_changed {
+            self.needs_redraw = offset_changed
+        };
     }
 
     fn scroll_vertical(&mut self, to: usize) {
@@ -192,7 +227,9 @@ impl View {
             false
         };
 
-        self.needs_redraw = offset_changed || self.needs_redraw;
+        if offset_changed {
+            self.needs_redraw = offset_changed
+        };
     }
 
     // =========================================== HELPERS =====================================================

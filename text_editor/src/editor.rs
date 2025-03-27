@@ -5,7 +5,7 @@ mod view;
 use crossterm::event::Event;
 use std::io::Error;
 
-use crossterm::event::{KeyEvent, KeyEventKind, read};
+use crossterm::event::read;
 
 use editor_command::EditorCommand;
 use terminal::Terminal;
@@ -72,34 +72,11 @@ impl Editor {
     }
 
     fn evaluate_event(&mut self, event: Event) {
-        let should_process = match &event {
-            Event::Key(KeyEvent { kind, .. }) => kind == &KeyEventKind::Press,
-            Event::Resize(_, _) => true,
-            _ => false,
-        };
-
-        // If there is no work to be done dont go into details
-        #[cfg(debug_assertions)]
-        {
-            assert!(
-                should_process,
-                "Recieved and discarded unsuported non-press event"
-            );
-        }
-
-        match EditorCommand::try_from(event) {
-            Ok(command) => {
-                if matches!(command, EditorCommand::Quit) {
-                    self.should_quit = true;
-                } else {
-                    self.view.handle_command(command);
-                }
-            }
-            Err(err) => {
-                #[cfg(debug_assertions)]
-                {
-                    panic!("Could not handle commmand: {err}");
-                }
+        if let Ok(command) = EditorCommand::try_from(event) {
+            if matches!(command, EditorCommand::Quit) {
+                self.should_quit = true;
+            } else {
+                self.view.handle_command(command);
             }
         }
     }

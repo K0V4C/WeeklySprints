@@ -24,7 +24,19 @@ impl Buffer {
         }
 
         if let Some(selected_line) = self.data.get_mut(location.line_index) {
-            return selected_line.add_character_to_line(chr, location.grapheme_index);
+            selected_line.add_character_to_line(chr, location.grapheme_index);
+        };
+    }
+
+    pub fn delete_character_at(&mut self, location: Location) {
+        if location.line_index > self.data.len() {
+            return;
+        }
+
+        // TODO: Add  deletion of lines themselves and concating
+
+        if let Some(selected_line) = self.data.get_mut(location.line_index) {
+            selected_line.delete_character(location.grapheme_index);
         };
     }
 

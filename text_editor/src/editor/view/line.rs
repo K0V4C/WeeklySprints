@@ -46,6 +46,20 @@ impl Line {
 
         self.fragments = Self::str_to_fragments(&result);
     }
+    
+    pub fn delete_character(&mut self, at: usize) {        
+        let mut result = String::new();
+
+        for (index, fragment) in self.fragments.iter().enumerate() {
+            if index == at {
+                continue;
+            }
+
+            result.push_str(&fragment.grapheme);
+        }
+
+        self.fragments = Self::str_to_fragments(&result);
+    }
 
     pub fn from(line_str: &str) -> Self {
         let fragments = Self::str_to_fragments(line_str);

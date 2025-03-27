@@ -64,7 +64,7 @@ impl View {
             EditorCommand::Move(direction) => self.move_text_location(&direction),
             EditorCommand::Resize(size) => self.resize(size),
             EditorCommand::Input(charater) => self.add_to_buffer(charater),
-            EditorCommand::Backspace => {self.move_left(); self.delete_grapheme();}
+            EditorCommand::Backspace => self.backspace(),
             EditorCommand::Delete => {self.delete_grapheme();}
             EditorCommand::Quit => {}
         }
@@ -167,7 +167,9 @@ impl View {
             .data
             .get(self.text_location.line_index)
             .map_or(0, Line::grapheme_count);
+
         self.buffer.add_character_at(chr, self.text_location);
+
         let new_len = self
             .buffer
             .data
@@ -177,15 +179,41 @@ impl View {
         let delta = new_len.saturating_sub(old_len);
 
         if delta > 0 {
-            self.move_right()
+            self.move_right();
         }
         self.needs_redraw = true;
     }
-    
+
+    fn backspace(&mut self) {
+        self.move_left();
+        self.delete_grapheme();
+    }
+
     fn delete_grapheme(&mut self) {
-        
-        
-        
+
+
+        let old_len = self
+            .buffer
+            .data
+            .get(self.text_location.line_index)
+            .map_or(0, Line::grapheme_count);
+
+        self.buffer.delete_character_at(self.text_location);
+
+        let new_len = self
+            .buffer
+            .data
+            .get(self.text_location.line_index)
+            .map_or(0, Line::grapheme_count);
+
+        let delta = old_len.saturating_sub(new_len);
+
+        for _ in 1..delta {
+            self.move_left();
+        }
+
+        self.needs_redraw = true;
+
     }
 
     // =========================================== SCROLLING ===================================================
@@ -210,7 +238,7 @@ impl View {
         };
 
         if offset_changed {
-            self.needs_redraw = offset_changed
+            self.needs_redraw = offset_changed;
         };
     }
 
@@ -228,7 +256,7 @@ impl View {
         };
 
         if offset_changed {
-            self.needs_redraw = offset_changed
+            self.needs_redraw = offset_changed;
         };
     }
 
@@ -269,7 +297,7 @@ impl View {
     fn move_left(&mut self) {
         if self.text_location.grapheme_index > 0 {
             self.text_location.grapheme_index -= 1;
-        } else {
+        } else if self.text_location.line_index > 0 {
             self.move_up(1);
             self.move_to_end_line();
         }

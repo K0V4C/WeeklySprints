@@ -21,6 +21,7 @@ pub enum EditorCommand {
     Backspace,
     Tab,
     Enter,
+    Save,
     Quit,
 }
 
@@ -43,14 +44,15 @@ impl TryFrom<Event> for EditorCommand {
                 (KeyCode::Home, _) => Ok(Self::Move(Direction::Home)),
                 (KeyCode::End, _) => Ok(Self::Move(Direction::End)),
 
-                (KeyCode::Char(chr), _) => Ok(Self::Input(chr)),
-
+                (KeyCode::Char('s'), KeyModifiers::CONTROL) => Ok(Self::Save),
+                
                 (KeyCode::Backspace, _) => Ok(Self::Backspace),
                 (KeyCode::Delete, _) => Ok(Self::Delete),
 
                 (KeyCode::Tab, _) => Ok(Self::Tab),
                 (KeyCode::Enter, _) => Ok(Self::Enter),
 
+                (KeyCode::Char(chr), _) => Ok(Self::Input(chr)),
                 _ => Err(format!("Key code not supported: {code:?}")),
             },
 

@@ -73,7 +73,7 @@ impl Line {
         if at > self.fragments.len() {
             return Line::default();
         }
-        
+
         //W When calling split_off leftover part is [at, A)
         let cut_off = self.fragments.split_off(at);
 
@@ -182,5 +182,16 @@ impl Line {
             .collect();
 
         fragments
+    }
+}
+
+impl std::fmt::Display for Line {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
+        let result: String = self.fragments.iter().map(|fragment| {
+            fragment.grapheme.clone()
+        }).collect();
+
+        write!(f, "{result}")
     }
 }

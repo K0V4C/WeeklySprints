@@ -68,6 +68,7 @@ impl View {
             EditorCommand::Delete => self.delete_grapheme(),
             EditorCommand::Enter => self.enter(),
             EditorCommand::Tab => self.tab(),
+            EditorCommand::Save => self.save(),
             EditorCommand::Quit => {}
         }
     }
@@ -75,6 +76,7 @@ impl View {
     pub fn load(&mut self, file_name: &str) {
         if let Ok(context) = std::fs::read_to_string(file_name) {
             self.buffer.clear();
+            self.buffer.file_name = file_name.to_string();
 
             for line in context.lines() {
                 self.buffer.push(line);
@@ -208,6 +210,10 @@ impl View {
 
     fn tab(&mut self) {
         self.add_to_buffer('\t');
+    }
+    
+    fn save(&mut self) {
+        let _ = self.buffer.save();
     }
 
     // =========================================== SCROLLING ===================================================

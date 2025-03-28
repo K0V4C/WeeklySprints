@@ -1,8 +1,12 @@
+use std::fs:: OpenOptions;
+use std::io::Write;
+
 use super::{Location, line::Line};
 
 #[derive(Default)]
 pub struct Buffer {
     pub data: Vec<Line>,
+    pub file_name: String
 }
 
 impl Buffer {
@@ -68,6 +72,20 @@ impl Buffer {
             let cut_off = working_line.split_off(location.grapheme_index);
             self.data.insert(location.line_index.saturating_add(1), cut_off);
         }
+    }
+
+    pub fn save(&self) -> Result<(), std::io::Error> {
+
+        let mut file = OpenOptions::new().write(true).create(true).truncate(true).open(&self.file_name)?;
+
+        for line in &self.data {
+
+            let string = line.to_string();
+
+            writeln!(file, "{string}")?;
+        }
+
+        Ok(())
     }
 
     pub fn get_number_of_lines(&self) -> usize {

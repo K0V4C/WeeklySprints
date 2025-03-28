@@ -65,7 +65,9 @@ impl View {
             EditorCommand::Resize(size) => self.resize(size),
             EditorCommand::Input(charater) => self.add_to_buffer(charater),
             EditorCommand::Backspace => self.backspace(),
-            EditorCommand::Delete => {self.delete_grapheme();}
+            EditorCommand::Delete => self.delete_grapheme(),
+            EditorCommand::Enter => self.enter(),
+            EditorCommand::Tab => self.tab(),
             EditorCommand::Quit => {}
         }
     }
@@ -196,6 +198,16 @@ impl View {
     fn delete_grapheme(&mut self) {
         self.buffer.delete_character_at(self.text_location);
         self.needs_redraw = true;
+    }
+
+    fn enter(&mut self) {
+        self.buffer.insert_newline(self.text_location);
+        self.move_text_location(&Direction::Down);
+        self.needs_redraw = true;
+    }
+
+    fn tab(&mut self) {
+        self.add_to_buffer('\t');
     }
 
     // =========================================== SCROLLING ===================================================

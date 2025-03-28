@@ -57,6 +57,19 @@ impl Buffer {
         }
     }
 
+    pub fn insert_newline(&mut self, location: Location) {
+
+        if location.line_index == self.get_number_of_lines() {
+            self.data.push(Line::default());
+            return;
+        }
+
+        if let Some(working_line) = self.data.get_mut(location.line_index) {
+            let cut_off = working_line.split_off(location.grapheme_index);
+            self.data.insert(location.line_index.saturating_add(1), cut_off);
+        }
+    }
+
     pub fn get_number_of_lines(&self) -> usize {
         self.data.len()
     }

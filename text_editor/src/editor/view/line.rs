@@ -24,6 +24,7 @@ pub struct TextFragment {
     replacement: Option<char>,
 }
 
+#[derive(Default)]
 pub struct Line {
     fragments: Vec<TextFragment>,
 }
@@ -46,8 +47,8 @@ impl Line {
 
         self.fragments = Self::str_to_fragments(&result);
     }
-    
-    pub fn delete_character(&mut self, at: usize) {        
+
+    pub fn delete_character(&mut self, at: usize) {
         let mut result = String::new();
 
         for (index, fragment) in self.fragments.iter().enumerate() {
@@ -60,11 +61,23 @@ impl Line {
 
         self.fragments = Self::str_to_fragments(&result);
     }
-    
+
     pub fn concat(&mut self, concat_line: Line) {
         for fragment in concat_line.fragments {
             self.fragments.push(fragment);
         }
+    }
+
+    pub fn split_off(&mut self, at: usize) -> Line {
+
+        if at > self.fragments.len() {
+            return Line::default();
+        }
+        
+        //W When calling split_off leftover part is [at, A)
+        let cut_off = self.fragments.split_off(at);
+
+        Line { fragments: cut_off }
     }
 
     pub fn from(line_str: &str) -> Self {

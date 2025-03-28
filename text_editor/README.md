@@ -18,6 +18,7 @@ In the end final projects will be similar but I am more lazy and quality of this
 4. text viewer almost done weird bug with cluster emojies
 5. adding deletion and insertion of characters (backspace and delete work)
 5. advanced deletion
+6. Enter + Tab
 
 #### Bugs: 
 - ghost image of auto resizing before applying propper view

@@ -1,19 +1,30 @@
 mod editor_command;
+mod status_bar;
 mod terminal;
 mod view;
 
 use crossterm::event::Event;
+use status_bar::StatusBar;
 use std::io::Error;
 
 use crossterm::event::read;
 
 use editor_command::EditorCommand;
-use terminal::Terminal;
+use terminal::{CaretPosition, Terminal, TerminalSize};
 use view::View;
+
+#[derive(Default)]
+pub struct DocumentStatus {
+    caret_position: CaretPosition,
+    file_name: Option<String>,
+    number_of_lines: usize,
+    is_modified: bool,
+}
 
 pub struct Editor {
     should_quit: bool,
     view: View,
+    status_bar: StatusBar,
 }
 
 impl Editor {
@@ -27,12 +38,16 @@ impl Editor {
 
         Terminal::init()?;
 
-        let mut view = View::default();
+        let status_bar_height = 1;
+        let status_bar = StatusBar::new(status_bar_height);
+
+        let mut view = View::new(status_bar.height() + 1);
         Self::load_file(&mut view);
 
         Ok(Editor {
             should_quit: false,
             view,
+            status_bar,
         })
     }
 
@@ -54,6 +69,8 @@ impl Editor {
                     }
                 }
             }
+            let status = self.view.get_status();
+            self.status_bar.update_status(status);
         }
     }
 
@@ -76,6 +93,13 @@ impl Editor {
             if matches!(command, EditorCommand::Quit) {
                 self.should_quit = true;
             } else {
+                if let EditorCommand::Resize(ts) = command {
+                    let new_size = TerminalSize {
+                        rows: 1,
+                        columns: ts.columns,
+                    };
+                    self.status_bar.resize(new_size);
+                }
                 self.view.handle_command(command);
             }
         }
@@ -84,6 +108,7 @@ impl Editor {
     fn refresh_screen(&mut self) {
         let _ = Terminal::hide_caret();
         self.view.render();
+        self.status_bar.render();
         let _ = Terminal::move_caret_to(self.view.caret_position());
         let _ = Terminal::show_caret();
         let _ = Terminal::draw();

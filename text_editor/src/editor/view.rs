@@ -9,6 +9,7 @@ use line::Line;
 use messages::Message;
 
 use super::{
+    DocumentStatus,
     editor_command::{Direction, EditorCommand},
     terminal::{CaretPosition, Terminal, TerminalSize},
 };
@@ -28,24 +29,29 @@ pub struct View {
     size: TerminalSize,
     text_location: Location,
     scroll_offset: CaretPosition,
-    file_given: bool
-}
-
-impl Default for View {
-    fn default() -> Self {
-        View {
-            buffer: Buffer::default(),
-            needs_redraw: true,
-            size: Terminal::size().unwrap_or_default(),
-            text_location: Location::default(),
-            scroll_offset: CaretPosition::default(),
-            file_given: false
-        }
-    }
+    file_given: bool,
 }
 
 impl View {
     // ======================================= PUBLIC INTERFACE ==================================================
+
+    pub fn new(vertical_margin: usize) -> Self {
+        let terminal_size = Terminal::size().unwrap_or_default();
+
+        let margined_size = TerminalSize {
+            rows: terminal_size.rows,
+            columns: terminal_size.columns.saturating_sub(vertical_margin),
+        };
+
+        View {
+            buffer: Buffer::default(),
+            needs_redraw: true,
+            size: margined_size,
+            text_location: Location::default(),
+            scroll_offset: CaretPosition::default(),
+            file_given: false,
+        }
+    }
 
     pub fn render(&mut self) {
         if !self.needs_redraw {
@@ -74,14 +80,7 @@ impl View {
     }
 
     pub fn load(&mut self, file_name: &str) {
-        if let Ok(context) = std::fs::read_to_string(file_name) {
-            self.buffer.clear();
-            self.buffer.file_name = file_name.to_string();
-
-            for line in context.lines() {
-                self.buffer.push(line);
-            }
-        }
+        self.buffer.load(file_name);
         self.file_given = true;
     }
 
@@ -94,6 +93,15 @@ impl View {
         self.size = new_size;
         self.scroll_text_location_into_view();
         self.needs_redraw = true;
+    }
+
+    pub fn get_status(&self) -> DocumentStatus {
+        DocumentStatus {
+            caret_position: self.caret_position(),
+            file_name: self.buffer.get_file_name(),
+            number_of_lines: self.buffer.get_number_of_lines(),
+            is_modified: self.buffer.is_modified(),
+        }
     }
 
     // ============================================ RENDERING =====================================================
@@ -211,7 +219,7 @@ impl View {
     fn tab(&mut self) {
         self.add_to_buffer('\t');
     }
-    
+
     fn save(&mut self) {
         let _ = self.buffer.save();
     }

@@ -45,7 +45,7 @@ impl TryFrom<Event> for EditorCommand {
                 (KeyCode::End, _) => Ok(Self::Move(Direction::End)),
 
                 (KeyCode::Char('s'), KeyModifiers::CONTROL) => Ok(Self::Save),
-                
+
                 (KeyCode::Backspace, _) => Ok(Self::Backspace),
                 (KeyCode::Delete, _) => Ok(Self::Delete),
 

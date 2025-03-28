@@ -69,7 +69,6 @@ impl Line {
     }
 
     pub fn split_off(&mut self, at: usize) -> Line {
-
         if at > self.fragments.len() {
             return Line::default();
         }
@@ -187,10 +186,11 @@ impl Line {
 
 impl std::fmt::Display for Line {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-
-        let result: String = self.fragments.iter().map(|fragment| {
-            fragment.grapheme.clone()
-        }).collect();
+        let result: String = self
+            .fragments
+            .iter()
+            .map(|fragment| fragment.grapheme.clone())
+            .collect();
 
         write!(f, "{result}")
     }

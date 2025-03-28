@@ -21,12 +21,14 @@ In the end final projects will be similar but I am more lazy and quality of this
 6. Enter + Tab
 6. Added Save
 6. Added Status Bar
+7. Fancy Status Bar
 
 #### Bugs: 
 - ghost image of auto resizing before applying propper view
 - random crash when resizing
 - pressing RIGHT goes twice FIXED
 - emoji scrolling still doesnt work as it should
+- terminal smaller then 3 rows just breaks 
 - weird bug when going full screen, somehow related to cluster emojies
 
 ### Credits

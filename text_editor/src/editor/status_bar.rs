@@ -1,6 +1,5 @@
 use super::{
-    DocumentStatus,
-    terminal::{Terminal, TerminalSize},
+    document_status::DocumentStatus, terminal::{Terminal, TerminalSize}
 };
 
 #[derive(Default)]
@@ -58,18 +57,20 @@ impl StatusBar {
             .clone()
             .unwrap_or("[None]".to_string());
 
-        let number_of_lines = self.status.number_of_lines;
+        let number_of_lines = self.status.line_count_to_string();
+        let position = self.status.position_indicator_to_string();
+        let modification = self.status.modified_indicator_to_string();
 
-        let x = self.status.caret_position.row;
-        let y = self.status.caret_position.column;
-        let position = format!("{x}/{y}");
+        let line = format!("{:<.50} - {} lines {}", file_name, number_of_lines, modification);
 
-        let modification = if self.status.is_modified { "M" } else { "N" };
-
-        let line = format!("{file_name} {number_of_lines}  {position} {modification} ");
+        let padding_left = self.width.saturating_sub(line.len()).saturating_sub(position.len()).saturating_sub(3);
+        let padding_right = 3;
+        let line = format!("{line}{}{position}{}", " ".repeat(padding_left), " ".repeat(padding_right));
 
         Self::render_line(self.get_rendering_row(), &line);
     }
+
+    // ================================================= RENDERING ==============================================
 
     fn get_rendering_row(&self) -> usize {
         Terminal::size()
@@ -79,7 +80,7 @@ impl StatusBar {
     }
 
     fn render_line(row: usize, string_to_render: &str) {
-        let result = Terminal::print_row(row, string_to_render);
+        let result = Terminal::print_row_with_attribute(row, crossterm::style::Attribute::Reverse, string_to_render);
         debug_assert!(result.is_ok(), "Failed to render the line!");
     }
 }

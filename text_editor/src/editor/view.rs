@@ -9,9 +9,7 @@ use line::Line;
 use messages::Message;
 
 use super::{
-    DocumentStatus,
-    editor_command::{Direction, EditorCommand},
-    terminal::{CaretPosition, Terminal, TerminalSize},
+    document_status::DocumentStatus, editor_command::{Direction, EditorCommand}, terminal::{CaretPosition, Terminal, TerminalSize}, 
 };
 
 const EDITOR_NAME: &str = "HECTO";

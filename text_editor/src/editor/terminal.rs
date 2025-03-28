@@ -1,14 +1,9 @@
 use std::io::{Error, Write, stdout};
 
 use crossterm::{
-    Command,
-    cursor::{Hide, MoveTo, SavePosition, Show},
-    execute, queue,
-    style::Print,
-    terminal::{
-        Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode,
-        enable_raw_mode,
-    },
+    cursor::{Hide, MoveTo, SavePosition, Show}, execute, queue, style::{Attribute, Print}, terminal::{
+        disable_raw_mode, enable_raw_mode, Clear, ClearType, DisableLineWrap, EnableLineWrap, EnterAlternateScreen, LeaveAlternateScreen, SetTitle
+    }, Command
 };
 
 #[derive(Copy, Clone, Default, Debug)]
@@ -38,6 +33,7 @@ impl Terminal {
     pub fn init() -> Result<(), std::io::Error> {
         enable_raw_mode()?;
         Self::enter_alternate_screen()?;
+        Self::disable_line_wrap()?;
         Self::clear_screen()?;
         Self::draw()?;
         Ok(())
@@ -46,6 +42,7 @@ impl Terminal {
     pub fn terminate() -> Result<(), std::io::Error> {
         Self::exit_alternate_screen()?;
         Self::show_caret()?;
+        Self::enable_line_wrap()?;
         Self::draw()?;
         disable_raw_mode()?;
         Ok(())
@@ -69,6 +66,21 @@ impl Terminal {
 
     pub fn exit_alternate_screen() -> Result<(), Error> {
         Self::queue_command(LeaveAlternateScreen)?;
+        Ok(())
+    }
+
+    pub fn disable_line_wrap() -> Result<(), Error> {
+        Self::queue_command(DisableLineWrap)?;
+        Ok(())
+    }
+
+    pub fn enable_line_wrap() -> Result<(), Error> {
+        Self::queue_command(EnableLineWrap)?;
+        Ok(())
+    }
+
+    pub fn set_title(title: &str) -> Result<(), Error> {
+        Self::queue_command(SetTitle(title))?;
         Ok(())
     }
 
@@ -122,6 +134,15 @@ impl Terminal {
         #[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
         let y = caret_positon.row as u16;
         Self::queue_command(MoveTo(x, y))?;
+        Ok(())
+    }
+
+    pub fn print_row_with_attribute(row: usize, attr: Attribute, line_text: &str) -> Result<(), std::io::Error> {
+        Self::move_caret_to(CaretPosition { column: 0, row })?;
+        Self::clear_line()?;
+        Self::print(
+            &format!("{}{}{}", attr, line_text,  Attribute::Reset)
+        )?;
         Ok(())
     }
 

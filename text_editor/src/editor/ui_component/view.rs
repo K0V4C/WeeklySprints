@@ -9,8 +9,8 @@ use line::Line;
 use messages::Message;
 
 use crate::editor::{
+    command::{Edit, Move},
     document_status::DocumentStatus,
-    editor_command::{Direction, EditorCommand},
     terminal::{CaretPosition, Terminal, TerminalSize},
 };
 
@@ -55,17 +55,22 @@ impl View {
         }
     }
 
-    pub fn handle_command(&mut self, command: EditorCommand) {
-        match command {
-            EditorCommand::Move(direction) => self.move_text_location(&direction),
-            EditorCommand::Resize(resize) => self.resize(resize),
-            EditorCommand::Input(charater) => self.add_to_buffer(charater),
-            EditorCommand::Backspace => self.backspace(),
-            EditorCommand::Delete => self.delete_grapheme(),
-            EditorCommand::Enter => self.enter(),
-            EditorCommand::Tab => self.tab(),
-            EditorCommand::Save => self.save(),
-            EditorCommand::Quit => {}
+    pub fn handle_save(&mut self) -> Result<(), std::io::Error> {
+        self.save()?;
+        Ok(())
+    }
+
+    pub fn handle_move_command(&mut self, move_command: Move) {
+        self.move_text_location(move_command);
+    }
+
+    pub fn handle_edit_command(&mut self, edit_command: Edit) {
+        match edit_command {
+            Edit::Tab => self.tab(),
+            Edit::Enter => self.enter(),
+            Edit::Delete => self.delete_grapheme(),
+            Edit::Backspace => self.backspace(),
+            Edit::Input(x) => self.add_to_buffer(x),
         }
     }
 
@@ -149,18 +154,18 @@ impl View {
 
     // ========================================= COMMAND HANDLING ==============================================
 
-    fn move_text_location(&mut self, direction: &Direction) {
+    fn move_text_location(&mut self, direction: Move) {
         let TerminalSize { rows, .. } = self.size;
 
         match direction {
-            Direction::Up => self.move_up(1),
-            Direction::Down => self.move_down(1),
-            Direction::Left => self.move_left(),
-            Direction::Right => self.move_right(),
-            Direction::PageUp => self.move_up(rows.saturating_sub(1)),
-            Direction::PageDown => self.move_down(rows.saturating_sub(1)),
-            Direction::Home => self.move_to_start_line(),
-            Direction::End => self.move_to_end_line(),
+            Move::Up => self.move_up(1),
+            Move::Down => self.move_down(1),
+            Move::Left => self.move_left(),
+            Move::Right => self.move_right(),
+            Move::PageUp => self.move_up(rows.saturating_sub(1)),
+            Move::PageDown => self.move_down(rows.saturating_sub(1)),
+            Move::Home => self.move_to_start_line(),
+            Move::End => self.move_to_end_line(),
         }
 
         self.scroll_text_location_into_view();
@@ -184,7 +189,7 @@ impl View {
         let delta = new_len.saturating_sub(old_len);
 
         if delta > 0 {
-            self.move_text_location(&Direction::Right);
+            self.move_text_location(Move::Right);
         }
         self.mark_redraw(true);
     }
@@ -194,7 +199,7 @@ impl View {
         if self.text_location.line_index == 0 && self.text_location.grapheme_index == 0 {
             return;
         }
-        self.move_text_location(&Direction::Left);
+        self.move_text_location(Move::Left);
         self.delete_grapheme();
     }
 
@@ -205,7 +210,7 @@ impl View {
 
     fn enter(&mut self) {
         self.buffer.insert_newline(self.text_location);
-        self.move_text_location(&Direction::Down);
+        self.move_text_location(Move::Down);
         self.mark_redraw(true);
     }
 
@@ -213,8 +218,8 @@ impl View {
         self.add_to_buffer('\t');
     }
 
-    fn save(&mut self) {
-        let _ = self.buffer.save();
+    fn save(&mut self) -> Result<(), std::io::Error> {
+        self.buffer.save()
     }
 
     // =========================================== SCROLLING ===================================================

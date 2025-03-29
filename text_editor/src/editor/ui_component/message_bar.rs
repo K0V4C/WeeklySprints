@@ -4,7 +4,7 @@ use crate::editor::terminal::{Terminal, TerminalSize};
 
 use super::UiComponent;
 
-pub const FIVE_SECONDS: Duration = Duration::new(5,0);
+pub const FIVE_SECONDS: Duration = Duration::new(5, 0);
 
 pub struct MessageBar {
     needs_redraw: bool,

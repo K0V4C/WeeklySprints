@@ -1,24 +1,33 @@
 use crate::editor::ui_component::UiComponent;
 
+mod command;
 mod document_status;
-mod editor_command;
 mod terminal;
 mod ui_component;
 
+use crate::editor::Command::{Edit, Move, System};
+use crate::editor::command::System::{Quit, Resize, Save};
+use command::Command;
 use crossterm::event::Event;
 use std::io::Error;
-use ui_component::{message_bar::{MessageBar, FIVE_SECONDS}, status_bar::StatusBar, view::View};
+use ui_component::{
+    message_bar::{FIVE_SECONDS, MessageBar},
+    status_bar::StatusBar,
+    view::View,
+};
 
 use crossterm::event::read;
 
-use editor_command::EditorCommand;
 use terminal::{Terminal, TerminalSize};
+
+const QUIT_COUNTER_START: usize = 3;
 
 pub struct Editor {
     should_quit: bool,
     view: View,
     status_bar: StatusBar,
     message_bar: MessageBar,
+    quit_counter: usize,
 }
 
 impl Editor {
@@ -43,6 +52,7 @@ impl Editor {
             view,
             status_bar,
             message_bar,
+            quit_counter: QUIT_COUNTER_START,
         })
     }
 
@@ -56,7 +66,6 @@ impl Editor {
 
     pub fn run(&mut self) {
         loop {
-
             self.refresh_screen();
 
             if self.should_quit {
@@ -99,14 +108,53 @@ impl Editor {
     }
 
     fn evaluate_event(&mut self, event: Event) {
-        if let Ok(command) = EditorCommand::try_from(event) {
-            if matches!(command, EditorCommand::Quit) {
+        if let Ok(command) = Command::try_from(event) {
+            self.handle_command(command);
+        }
+    }
+
+    fn handle_command(&mut self, command: Command) {
+        match command {
+            System(Quit) => self.quit_try(),
+            System(Resize(size)) => self.resize(size),
+
+            _ => self.reset_quit_counter(),
+        }
+
+        match command {
+            System(Quit | Resize(_)) => (),
+            System(Save) => self.handle_save(),
+            Move(move_command) => self.view.handle_move_command(move_command),
+            Edit(edit_command) => self.view.handle_edit_command(edit_command),
+        }
+    }
+
+    fn handle_save(&mut self) {
+        if self.view.handle_save().is_err() {
+            self.message_bar.update_message("Error saving the file");
+        } else {
+            self.message_bar.update_message("File saved sucessfully!");
+        }
+    }
+
+    fn reset_quit_counter(&mut self) {
+        self.quit_counter = QUIT_COUNTER_START;
+    }
+
+    fn quit_try(&mut self) {
+        let status = self.view.get_status();
+        
+        if status.is_modified {
+            self.quit_counter = self.quit_counter.saturating_sub(1);
+            self.message_bar.update_message(&format!(
+                "WARNING! File has unsaved changes. Press Ctrl-Q {} more times to quit.",
+                self.quit_counter
+            ));
+            if self.quit_counter == 0 {
                 self.should_quit = true;
-            } else if let EditorCommand::Resize(ts) = command {
-                self.resize(ts);
-            } else {
-                self.view.handle_command(command);
             }
+        } else {
+            self.should_quit = true;
         }
     }
 
@@ -149,15 +197,12 @@ impl Editor {
         }
 
         if terminal_size.rows > 1 {
-            self.status_bar
-                .render(terminal_size.rows.saturating_sub(2));
+            self.status_bar.render(terminal_size.rows.saturating_sub(2));
         }
-
 
         self.message_bar.check_message_expired(FIVE_SECONDS);
         self.message_bar
             .render(terminal_size.rows.saturating_sub(1));
-
     }
 }
 

@@ -43,10 +43,7 @@ impl StatusBar {
         let position = self.status.position_indicator_to_string();
         let modification = self.status.modified_indicator_to_string();
 
-        let line = format!(
-            "{file_name:<.50} - {number_of_lines} lines {modification}",
-            
-        );
+        let line = format!("{file_name:<.50} - {number_of_lines} lines {modification}",);
 
         let padding_left = self
             .size

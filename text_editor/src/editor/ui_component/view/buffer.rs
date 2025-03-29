@@ -11,6 +11,8 @@ pub struct Buffer {
 }
 
 impl Buffer {
+    // ==================================================== Simple Manipulation Methods ================================================
+
     pub fn clear(&mut self) {
         self.data.clear();
     }
@@ -20,16 +22,29 @@ impl Buffer {
         self.data.push(Line::from(string));
     }
 
-    pub fn load(&mut self, file_name: &str) {
-        if let Ok(context) = std::fs::read_to_string(file_name) {
-            self.clear();
-            self.file_name = Some(file_name.to_string());
-
-            for line in context.lines() {
-                self.data.push(Line::from(line));
-            }
-        }
+    pub fn set_file(&mut self, file_name: &str) {
+        self.file_name = Some(file_name.to_string());
     }
+
+    // ============================================================= Getters ==========================================================
+
+    pub fn get_file_name(&self) -> Option<String> {
+        self.file_name.clone()
+    }
+
+    pub fn is_modified(&self) -> bool {
+        self.is_modified
+    }
+
+    pub fn is_file_given(&self) -> bool {
+        self.file_name.is_some()
+    }
+
+    pub fn get_number_of_lines(&self) -> usize {
+        self.data.len()
+    }
+
+    // ====================================================== Buffer Edditing ===================================================
 
     pub fn add_character_at(&mut self, chr: char, location: Location) {
         if location.line_index > self.data.len() {
@@ -95,7 +110,20 @@ impl Buffer {
         self.is_modified = true;
     }
 
-    pub fn save(&self) -> Result<(), std::io::Error> {
+    // =================================================== Loading/Saving File ======================================================
+
+    pub fn load(&mut self, file_name: &str) {
+        if let Ok(context) = std::fs::read_to_string(file_name) {
+            self.clear();
+            self.file_name = Some(file_name.to_string());
+
+            for line in context.lines() {
+                self.data.push(Line::from(line));
+            }
+        }
+    }
+
+    pub fn save(&mut self) -> Result<(), std::io::Error> {
         if let Some(file_name) = self.file_name.clone() {
             let mut file = OpenOptions::new()
                 .write(true)
@@ -108,20 +136,10 @@ impl Buffer {
 
                 writeln!(file, "{string}")?;
             }
+
+            self.is_modified = false;
         }
 
         Ok(())
-    }
-
-    pub fn get_file_name(&self) -> Option<String> {
-        self.file_name.clone()
-    }
-
-    pub fn is_modified(&self) -> bool {
-        self.is_modified
-    }
-
-    pub fn get_number_of_lines(&self) -> usize {
-        self.data.len()
     }
 }

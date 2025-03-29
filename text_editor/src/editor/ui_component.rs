@@ -1,8 +1,9 @@
-use super::terminal::TerminalSize;
-
+pub mod command_bar;
 pub mod message_bar;
 pub mod status_bar;
 pub mod view;
+
+use super::terminal::TerminalSize;
 
 pub trait UiComponent {
     /// Marks if ui component need to be redrawn

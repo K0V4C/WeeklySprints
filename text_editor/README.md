@@ -24,6 +24,7 @@ In the end final projects will be similar but I am more lazy and quality of this
 7. Fancy Status Bar
 7. Message Bar and small refactor for UiComponents
 7. Added expiration to messages
+8. Save as added
 
 #### Bugs: 
 - ghost image of auto resizing before applying propper view

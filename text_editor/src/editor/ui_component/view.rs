@@ -1,5 +1,5 @@
 mod buffer;
-mod line;
+pub mod line;
 mod messages;
 
 use std::cmp;
@@ -31,7 +31,6 @@ pub struct View {
     size: TerminalSize,
     text_location: Location,
     scroll_offset: CaretPosition,
-    file_given: bool,
 }
 
 impl View {
@@ -51,13 +50,16 @@ impl View {
             size: margined_size,
             text_location: Location::default(),
             scroll_offset: CaretPosition::default(),
-            file_given: false,
         }
     }
 
     pub fn handle_save(&mut self) -> Result<(), std::io::Error> {
         self.save()?;
         Ok(())
+    }
+
+    pub fn is_file_given(&self) -> bool {
+        self.buffer.is_file_given()
     }
 
     pub fn handle_move_command(&mut self, move_command: Move) {
@@ -76,7 +78,10 @@ impl View {
 
     pub fn load(&mut self, file_name: &str) {
         self.buffer.load(file_name);
-        self.file_given = true;
+    }
+
+    pub fn set_buffer_file(&mut self, file_name: &str) {
+        self.buffer.set_file(file_name);
     }
 
     pub fn caret_position(&self) -> CaretPosition {
@@ -131,7 +136,7 @@ impl View {
 
     fn draw_welcome_message(&self) -> Result<(), std::io::Error> {
         // File and no welcome
-        if self.file_given {
+        if self.is_file_given() {
             return Ok(());
         }
 

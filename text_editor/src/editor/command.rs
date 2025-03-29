@@ -21,11 +21,13 @@ impl TryFrom<KeyEvent> for Move {
         let KeyEvent {
             code, modifiers, ..
         } = event;
-        
+
         if modifiers != KeyModifiers::NONE {
-            return Err(format!("Unsupported key code {code:?} or modifier {modifiers:?}"))
+            return Err(format!(
+                "Unsupported key code {code:?} or modifier {modifiers:?}"
+            ));
         }
-        
+
         match (code, modifiers) {
             (KeyCode::Up, _) => Ok(Self::Up),
             (KeyCode::Down, _) => Ok(Self::Down),
@@ -75,6 +77,7 @@ pub enum System {
     Resize(TerminalSize),
     Save,
     Quit,
+    Abort,
 }
 
 impl TryFrom<KeyEvent> for System {
@@ -82,15 +85,16 @@ impl TryFrom<KeyEvent> for System {
 
     fn try_from(event: KeyEvent) -> Result<Self, Self::Error> {
         let KeyEvent {
-                code, modifiers, ..
-            } = event;
+            code, modifiers, ..
+        } = event;
 
         match (code, modifiers) {
-                (KeyCode::Char('q'), KeyModifiers::CONTROL) => Ok(Self::Quit),
-                (KeyCode::Char('s'), KeyModifiers::CONTROL) => Ok(Self::Save),
+            (KeyCode::Char('q'), KeyModifiers::CONTROL) => Ok(Self::Quit),
+            (KeyCode::Char('s'), KeyModifiers::CONTROL) => Ok(Self::Save),
+            (KeyCode::Esc, KeyModifiers::NONE) => Ok(Self::Abort),
 
-                _ => Err(format!("Movement key code not supported: {code:?}")),
-            }
+            _ => Err(format!("Movement key code not supported: {code:?}")),
+        }
     }
 }
 

@@ -10,25 +10,22 @@ pub struct DocumentStatus {
 
 impl DocumentStatus {
     pub fn modified_indicator_to_string(&self) -> String {
-            if self.is_modified {
-                String::from("(modified)")
-            } else {
-                String::new()
-            }
+        if self.is_modified {
+            String::from("(modified)")
+        } else {
+            String::new()
         }
+    }
 
-        pub fn line_count_to_string(&self) -> String {
-            format!("{} lines", self.number_of_lines)
-        }
+    pub fn line_count_to_string(&self) -> String {
+        format!("{} lines", self.number_of_lines)
+    }
 
-
-        pub fn position_indicator_to_string(&self) -> String {
-            format!(
-                "{}/{}",
-                self.caret_position.row.saturating_add(1),
-                self.number_of_lines
-            )
-
-
-        }
+    pub fn position_indicator_to_string(&self) -> String {
+        format!(
+            "{}/{}",
+            self.caret_position.row.saturating_add(1),
+            self.number_of_lines
+        )
+    }
 }

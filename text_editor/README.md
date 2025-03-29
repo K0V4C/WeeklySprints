@@ -22,6 +22,7 @@ In the end final projects will be similar but I am more lazy and quality of this
 6. Added Save
 6. Added Status Bar
 7. Fancy Status Bar
+7. Message Bar and small refactor for UiComponents
 
 #### Bugs: 
 - ghost image of auto resizing before applying propper view
@@ -30,6 +31,7 @@ In the end final projects will be similar but I am more lazy and quality of this
 - emoji scrolling still doesnt work as it should
 - terminal smaller then 3 rows just breaks 
 - weird bug when going full screen, somehow related to cluster emojies
+- Rendering order 
 
 ### Credits
 

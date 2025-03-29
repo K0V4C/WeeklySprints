@@ -1,26 +1,24 @@
-mod editor_command;
+use crate::editor::ui_component::UiComponent;
+
 mod document_status;
-mod message_bar;
-mod status_bar;
+mod editor_command;
 mod terminal;
-mod view;
+mod ui_component;
 
 use crossterm::event::Event;
-use message_bar::MessageBar;
-use status_bar::StatusBar;
 use std::io::Error;
+use ui_component::{message_bar::MessageBar, status_bar::StatusBar, view::View};
 
 use crossterm::event::read;
 
 use editor_command::EditorCommand;
 use terminal::{Terminal, TerminalSize};
-use view::View;
 
 pub struct Editor {
     should_quit: bool,
     view: View,
     status_bar: StatusBar,
-    message_bar: MessageBar
+    message_bar: MessageBar,
 }
 
 impl Editor {
@@ -42,28 +40,20 @@ impl Editor {
             should_quit: false,
             view,
             status_bar,
-            message_bar
+            message_bar,
         })
     }
 
     fn create_components() -> (View, StatusBar, MessageBar) {
-
-        let message_bar_height = 1;
-        let message_bar = MessageBar::new(message_bar_height);
-
-        let status_bar_height = 1;
-        let status_bar = StatusBar::new(status_bar_height);
-
-        let view = View::new(status_bar.height() + message_bar.height());
+        let message_bar = MessageBar::new();
+        let status_bar = StatusBar::new();
+        let view = View::new(2);
 
         (view, status_bar, message_bar)
     }
 
     pub fn run(&mut self) {
         loop {
-
-            let status = self.view.get_status();
-            self.status_bar.update_status(status);
 
             self.refresh_screen();
 
@@ -83,6 +73,9 @@ impl Editor {
                     }
                 }
             }
+
+            let status = self.view.get_status();
+            self.status_bar.update_status(status);
         }
     }
 
@@ -94,7 +87,7 @@ impl Editor {
         }
 
         if let Some(name) = env_vars.get(1) {
-            let _ = Terminal::set_title(&name);
+            let _ = Terminal::set_title(name);
             view.load(name);
         } else {
             let _ = Terminal::set_title("Hecto");
@@ -107,18 +100,28 @@ impl Editor {
         if let Ok(command) = EditorCommand::try_from(event) {
             if matches!(command, EditorCommand::Quit) {
                 self.should_quit = true;
+            } else if let EditorCommand::Resize(ts) = command {
+                self.resize(ts);
             } else {
-                if let EditorCommand::Resize(ts) = command {
-                    let new_size = TerminalSize {
-                        rows: 1,
-                        columns: ts.columns,
-                    };
-                    self.status_bar.resize(new_size);
-                    self.message_bar.resize(new_size);
-                }
                 self.view.handle_command(command);
             }
         }
+    }
+
+    fn resize(&mut self, new_terminal_size: TerminalSize) {
+        self.message_bar.resize(TerminalSize {
+            columns: new_terminal_size.columns,
+            rows: 1,
+        });
+        self.status_bar.resize(TerminalSize {
+            columns: new_terminal_size.columns,
+            rows: 1,
+        });
+        let new_height = new_terminal_size.rows.saturating_sub(2);
+        self.view.resize(TerminalSize {
+            columns: new_terminal_size.columns,
+            rows: new_height,
+        });
     }
 
     fn refresh_screen(&mut self) {
@@ -130,30 +133,26 @@ impl Editor {
     }
 
     fn render_components(&mut self) {
-
         let terminal_size = Terminal::size().unwrap_or_default();
 
-        match terminal_size.rows {
-
-            _ if terminal_size.rows == 1 => {
-                self.message_bar.render();
-            }
-
-            _ if terminal_size.rows < 3 => {
-                self.status_bar.render();
-                self.message_bar.render();
-            }
-
-            _ if terminal_size.rows > 3 => {
-                self.view.render();
-                self.status_bar.render();
-                self.message_bar.render();
-            }
-
-            _ => {
-                panic!("BOOM");
-            }
+        if terminal_size.columns == 0 || terminal_size.rows == 0 {
+            return;
         }
+        
+        // Order of rendering here is important
+        // 
+
+        if terminal_size.rows > 2 {
+            self.view.render(0);
+        }
+        
+        if terminal_size.rows > 1 {
+            self.status_bar
+                .render(terminal_size.rows.saturating_sub(2));
+        }
+        
+        self.message_bar
+            .render(terminal_size.rows.saturating_sub(1));
 
     }
 }

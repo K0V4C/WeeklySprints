@@ -8,9 +8,13 @@ use buffer::Buffer;
 use line::Line;
 use messages::Message;
 
-use super::{
-    document_status::DocumentStatus, editor_command::{Direction, EditorCommand}, terminal::{CaretPosition, Terminal, TerminalSize}, 
+use crate::editor::{
+    document_status::DocumentStatus,
+    editor_command::{Direction, EditorCommand},
+    terminal::{CaretPosition, Terminal, TerminalSize},
 };
+
+use super::UiComponent;
 
 const EDITOR_NAME: &str = "HECTO";
 const EDITOR_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -51,22 +55,10 @@ impl View {
         }
     }
 
-    pub fn render(&mut self) {
-        if !self.needs_redraw {
-            return;
-        }
-
-        self.draw_rows();
-        self.draw_buffer();
-        self.draw_welcome_message();
-
-        self.needs_redraw = false;
-    }
-
     pub fn handle_command(&mut self, command: EditorCommand) {
         match command {
             EditorCommand::Move(direction) => self.move_text_location(&direction),
-            EditorCommand::Resize(size) => self.resize(size),
+            EditorCommand::Resize(resize) => self.resize(resize),
             EditorCommand::Input(charater) => self.add_to_buffer(charater),
             EditorCommand::Backspace => self.backspace(),
             EditorCommand::Delete => self.delete_grapheme(),
@@ -90,7 +82,7 @@ impl View {
     pub fn resize(&mut self, new_size: TerminalSize) {
         self.size = new_size;
         self.scroll_text_location_into_view();
-        self.needs_redraw = true;
+        self.mark_redraw(true);
     }
 
     pub fn get_status(&self) -> DocumentStatus {
@@ -104,19 +96,20 @@ impl View {
 
     // ============================================ RENDERING =====================================================
 
-    fn draw_rows(&mut self) {
+    fn draw_rows(&mut self) -> Result<(), std::io::Error> {
         let _ = Terminal::move_caret_to(CaretPosition { column: 0, row: 0 });
         for row in 0..self.size.rows {
-            Self::render_line(row, "~");
+            Terminal::print_row(row, "~")?;
         }
         let _ = Terminal::move_caret_to(CaretPosition { column: 0, row: 0 });
+        Ok(())
     }
 
-    fn draw_buffer(&self) {
+    fn draw_buffer(&self) -> Result<(), std::io::Error> {
         let (width, height) = (self.size.columns, self.size.rows);
 
         if width == 0 || height == 0 {
-            return;
+            return Ok(());
         }
 
         let top = self.scroll_offset.row;
@@ -125,16 +118,16 @@ impl View {
             if let Some(line) = self.buffer.data.get(current_row.saturating_add(top)) {
                 let left = self.scroll_offset.column;
                 let right = self.scroll_offset.column.saturating_add(width);
-
-                Self::render_line(current_row, &line.get_visable_graphemes(left..right));
+                Terminal::print_row(current_row, &line.get_visable_graphemes(left..right))?;
             }
         }
+        Ok(())
     }
 
-    fn draw_welcome_message(&self) {
+    fn draw_welcome_message(&self) -> Result<(), std::io::Error> {
         // File and no welcome
         if self.file_given {
-            return;
+            return Ok(());
         }
 
         let welcome_message_buffer =
@@ -144,12 +137,14 @@ impl View {
 
         for line in welcome_message_buffer.data {
             // Cut off is here if someone wants to build different welcome message they dont have to worry about it fitting perfectly
-            Self::render_line(
+            Terminal::print_row(
                 start_render_line,
                 &line.get_visable_graphemes(0..self.size.columns),
-            );
+            )?;
             start_render_line += 1;
         }
+
+        Ok(())
     }
 
     // ========================================= COMMAND HANDLING ==============================================
@@ -191,7 +186,7 @@ impl View {
         if delta > 0 {
             self.move_text_location(&Direction::Right);
         }
-        self.needs_redraw = true;
+        self.mark_redraw(true);
     }
 
     fn backspace(&mut self) {
@@ -205,13 +200,13 @@ impl View {
 
     fn delete_grapheme(&mut self) {
         self.buffer.delete_character_at(self.text_location);
-        self.needs_redraw = true;
+        self.mark_redraw(true);
     }
 
     fn enter(&mut self) {
         self.buffer.insert_newline(self.text_location);
         self.move_text_location(&Direction::Down);
-        self.needs_redraw = true;
+        self.mark_redraw(true);
     }
 
     fn tab(&mut self) {
@@ -244,7 +239,7 @@ impl View {
         };
 
         if offset_changed {
-            self.needs_redraw = offset_changed;
+            self.mark_redraw(offset_changed);
         };
     }
 
@@ -262,7 +257,7 @@ impl View {
         };
 
         if offset_changed {
-            self.needs_redraw = offset_changed;
+            self.mark_redraw(offset_changed);
         };
     }
 
@@ -345,9 +340,29 @@ impl View {
         });
         CaretPosition { column: col, row }
     }
+}
 
-    fn render_line(row: usize, string_to_render: &str) {
-        let result = Terminal::print_row(row, string_to_render);
-        debug_assert!(result.is_ok(), "Failed to render the line!");
+impl UiComponent for View {
+    /// Marks if ui component need to be redrawn
+    fn mark_redraw(&mut self, needs_redraw: bool) {
+        self.needs_redraw = needs_redraw;
+    }
+
+    /// Get status of redraw
+    fn needs_redraw(&self) -> bool {
+        self.needs_redraw
+    }
+
+    /// Set the size of the component
+    fn set_size(&mut self, new_size: TerminalSize) {
+        self.size = new_size;
+    }
+
+    /// Method to actually draw the component, must be implemented by each component
+    fn draw(&mut self, _: usize) -> Result<(), std::io::Error> {
+        self.draw_rows()?;
+        self.draw_buffer()?;
+        self.draw_welcome_message()?;
+        Ok(())
     }
 }

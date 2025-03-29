@@ -1,9 +1,14 @@
 use std::io::{Error, Write, stdout};
 
 use crossterm::{
-    cursor::{Hide, MoveTo, SavePosition, Show}, execute, queue, style::{Attribute, Print}, terminal::{
-        disable_raw_mode, enable_raw_mode, Clear, ClearType, DisableLineWrap, EnableLineWrap, EnterAlternateScreen, LeaveAlternateScreen, SetTitle
-    }, Command
+    Command,
+    cursor::{Hide, MoveTo, SavePosition, Show},
+    execute, queue,
+    style::{Attribute, Print},
+    terminal::{
+        Clear, ClearType, DisableLineWrap, EnableLineWrap, EnterAlternateScreen,
+        LeaveAlternateScreen, SetTitle, disable_raw_mode, enable_raw_mode,
+    },
 };
 
 #[derive(Copy, Clone, Default, Debug)]
@@ -137,12 +142,14 @@ impl Terminal {
         Ok(())
     }
 
-    pub fn print_row_with_attribute(row: usize, attr: Attribute, line_text: &str) -> Result<(), std::io::Error> {
+    pub fn print_row_with_attribute(
+        row: usize,
+        attr: Attribute,
+        line_text: &str,
+    ) -> Result<(), std::io::Error> {
         Self::move_caret_to(CaretPosition { column: 0, row })?;
         Self::clear_line()?;
-        Self::print(
-            &format!("{}{}{}", attr, line_text,  Attribute::Reset)
-        )?;
+        Self::print(&format!("{}{}{}", attr, line_text, Attribute::Reset))?;
         Ok(())
     }
 

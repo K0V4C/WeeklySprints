@@ -1,12 +1,16 @@
+use std::time::{Duration, Instant};
+
 use crate::editor::terminal::{Terminal, TerminalSize};
 
 use super::UiComponent;
 
-#[derive(Default)]
+pub const FIVE_SECONDS: Duration = Duration::new(5,0);
+
 pub struct MessageBar {
     needs_redraw: bool,
     size: TerminalSize,
     message_string: String,
+    last_render: Instant,
 }
 
 impl MessageBar {
@@ -18,15 +22,31 @@ impl MessageBar {
             needs_redraw: true,
             size,
             message_string: Self::default_message(),
+            last_render: Instant::now(),
         }
     }
 
-    pub fn resize(&mut self, new_size: TerminalSize) {
-        self.size = new_size;
-        self.needs_redraw = true;
+    pub fn update_message(&mut self, new_message: &str) {
+        self.start_messasge_timer();
+        self.message_string = new_message.to_string();
+        self.mark_redraw(true);
+    }
+
+    pub fn check_message_expired(&mut self, limit: Duration) {
+        let now = Instant::now();
+        let elapsed = now.duration_since(self.last_render);
+
+        if elapsed >= limit {
+            self.message_string = Self::default_message();
+            self.mark_redraw(true);
+        }
     }
 
     // ======================================== HELPER METHODS =======================================================
+
+    fn start_messasge_timer(&mut self) {
+        self.last_render = Instant::now();
+    }
 
     fn default_message() -> String {
         "HELP: Ctrl-S = save | Ctrl-Q = quit".to_string()

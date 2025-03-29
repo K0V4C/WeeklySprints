@@ -7,7 +7,7 @@ mod ui_component;
 
 use crossterm::event::Event;
 use std::io::Error;
-use ui_component::{message_bar::MessageBar, status_bar::StatusBar, view::View};
+use ui_component::{message_bar::{MessageBar, FIVE_SECONDS}, status_bar::StatusBar, view::View};
 
 use crossterm::event::read;
 
@@ -32,9 +32,11 @@ impl Editor {
 
         Terminal::init()?;
 
-        let (mut view, status_bar, message_bar) = Self::create_components();
+        let (mut view, status_bar, mut message_bar) = Self::create_components();
 
         Self::load_file(&mut view);
+
+        message_bar.update_message("Hi");
 
         Ok(Editor {
             should_quit: false,
@@ -138,19 +140,21 @@ impl Editor {
         if terminal_size.columns == 0 || terminal_size.rows == 0 {
             return;
         }
-        
+
         // Order of rendering here is important
-        // 
+        //
 
         if terminal_size.rows > 2 {
             self.view.render(0);
         }
-        
+
         if terminal_size.rows > 1 {
             self.status_bar
                 .render(terminal_size.rows.saturating_sub(2));
         }
-        
+
+
+        self.message_bar.check_message_expired(FIVE_SECONDS);
         self.message_bar
             .render(terminal_size.rows.saturating_sub(1));
 

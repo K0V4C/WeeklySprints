@@ -23,6 +23,7 @@ In the end final projects will be similar but I am more lazy and quality of this
 6. Added Status Bar
 7. Fancy Status Bar
 7. Message Bar and small refactor for UiComponents
+7. Added expiration to messages
 
 #### Bugs: 
 - ghost image of auto resizing before applying propper view
@@ -32,6 +33,9 @@ In the end final projects will be similar but I am more lazy and quality of this
 - terminal smaller then 3 rows just breaks 
 - weird bug when going full screen, somehow related to cluster emojies
 - Rendering order 
+
+#### Improve:
+- No need to redraw as many times as I do
 
 ### Credits
 

@@ -41,8 +41,8 @@ impl View {
         let terminal_size = Terminal::size().unwrap_or_default();
 
         let margined_size = TerminalSize {
-            rows: terminal_size.rows,
-            columns: terminal_size.columns.saturating_sub(vertical_margin),
+            rows: terminal_size.rows.saturating_sub(vertical_margin),
+            columns: terminal_size.columns,
         };
 
         View {

@@ -90,7 +90,7 @@ impl Buffer {
             let next_line = self.data.remove(location.line_index.saturating_add(1));
             // This is the same code for `selected_line` had to be written this way so the reference from before would be dropped
             let selected_line = self.data.get_mut(location.line_index).unwrap();
-            selected_line.concat(next_line);
+            selected_line.concat(&next_line);
             self.is_modified = true;
         }
     }

@@ -49,7 +49,7 @@ impl MessageBar {
     }
 
     fn default_message() -> String {
-        "HELP: Ctrl-S = save | Ctrl-Q = quit".to_string()
+        "HELP: Ctrl-F = find | Ctrl-S = save | Ctrl-Q = quit".to_string()
     }
 }
 

@@ -78,6 +78,7 @@ pub enum System {
     Save,
     Quit,
     Abort,
+    Search,
 }
 
 impl TryFrom<KeyEvent> for System {
@@ -91,6 +92,7 @@ impl TryFrom<KeyEvent> for System {
         match (code, modifiers) {
             (KeyCode::Char('q'), KeyModifiers::CONTROL) => Ok(Self::Quit),
             (KeyCode::Char('s'), KeyModifiers::CONTROL) => Ok(Self::Save),
+            (KeyCode::Char('f'), KeyModifiers::CONTROL) => Ok(Self::Search),
             (KeyCode::Esc, KeyModifiers::NONE) => Ok(Self::Abort),
 
             _ => Err(format!("Movement key code not supported: {code:?}")),

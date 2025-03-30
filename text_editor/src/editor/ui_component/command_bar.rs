@@ -1,11 +1,18 @@
 use crate::editor::{
-    command::{Edit, Move},
+    command::{Edit, Move, System},
     terminal::{CaretPosition, Terminal, TerminalSize},
 };
 
 use super::{UiComponent, view::line::Line};
 
-const SAVE_AS_STRING: &str = " SAVE AS: ";
+const SAVE_AS_STRING: &str = "Save as: ";
+const SEARCH_STRING: &str = "Search: ";
+
+enum CommandMode {
+    None,
+    Saving(String),
+    Searching(String),
+}
 
 pub struct CommandBar {
     needs_redraw: bool,
@@ -13,6 +20,7 @@ pub struct CommandBar {
     caret_position: CaretPosition,
     command_line: Line,
     result: String,
+    mode: CommandMode,
 }
 
 impl CommandBar {
@@ -21,8 +29,8 @@ impl CommandBar {
         let size = Terminal::size().unwrap_or_default();
 
         let caret_position = CaretPosition {
-            row: 0,                              // this is relative to only this component so this is true
-            column: Self::get_len_left_margin(), // Never can caret go behind this
+            row: 0,                             // this is relative to only this component so this is true
+            column: 0,                          // Never can caret go behind this
         };
 
         CommandBar {
@@ -31,11 +39,33 @@ impl CommandBar {
             caret_position,
             command_line: Line::default(),
             result: String::new(),
+            mode: CommandMode::None,
         }
     }
 
     pub fn get_command_line(&self) -> String {
         self.result.clone()
+    }
+
+    pub fn handle_system_command(&mut self, system_command: System) {
+        match system_command {
+            System::Save => self.mode = CommandMode::Saving(SAVE_AS_STRING.to_string()),
+            System::Search => self.mode = CommandMode::Searching(SEARCH_STRING.to_string()),
+            System::Abort => self.mode = CommandMode::None,
+            _ => (),
+        }
+        self.command_line.clear();
+        self.snap_caret();
+        self.mark_redraw(true);
+    }
+
+    fn snap_caret(&mut self) {
+        let left_limit = self.get_len_left_margin();
+
+        self.caret_position = CaretPosition {
+            column: left_limit,
+            row: self.caret_position().row
+        }
     }
 
     pub fn handle_edit_command(&mut self, edit_command: Edit) {
@@ -63,12 +93,13 @@ impl CommandBar {
     }
 
     fn delete_grapheme(&mut self) {
+        let margin = self.get_len_left_margin();
         self.command_line
-            .delete_character(self.caret_position().column.saturating_sub(Self::get_len_left_margin()));
+            .delete_character(self.caret_position().column.saturating_sub(margin));
     }
 
     fn backspace(&mut self) {
-        if self.caret_position().column == Self::get_len_left_margin() {
+        if self.caret_position().column == self.get_len_left_margin() {
             return;
         }
         self.handle_move_command(Move::Left);
@@ -94,7 +125,7 @@ impl CommandBar {
     fn move_left(&mut self) {
         let position = self.caret_position;
 
-        let left_limit = Self::get_len_left_margin();
+        let left_limit = self.get_len_left_margin();
 
         if self.caret_position().column > left_limit {
             self.caret_position = CaretPosition {
@@ -104,8 +135,18 @@ impl CommandBar {
         }
     }
 
-    fn get_len_left_margin() -> usize {
-        SAVE_AS_STRING.len()
+    fn get_len_left_margin(&mut self) -> usize {
+        match &self.mode {
+            CommandMode::Saving(x) | CommandMode::Searching(x) => x.len(),
+            CommandMode::None => 0,
+        }
+    }
+
+    fn construct_line(&self) -> String {
+        match &self.mode {
+            CommandMode::Saving(x) | CommandMode::Searching(x) => x.clone() + &self.line_to_string(),
+            CommandMode::None => String::new(),
+        }
     }
 
     fn move_right(&mut self) {
@@ -117,7 +158,7 @@ impl CommandBar {
             self.command_line.grapheme_count()
         };
 
-        right_limit = right_limit.saturating_add(Self::get_len_left_margin());
+        right_limit = right_limit.saturating_add(self.get_len_left_margin());
 
         if self.caret_position().column < right_limit {
             self.caret_position = CaretPosition {
@@ -135,7 +176,7 @@ impl CommandBar {
             self.command_line.grapheme_count()
         };
 
-        right_limit = right_limit.saturating_add(Self::get_len_left_margin());
+        right_limit = right_limit.saturating_add(self.get_len_left_margin());
 
         self.caret_position = CaretPosition {
             row: position.row,
@@ -147,7 +188,7 @@ impl CommandBar {
 
         self.caret_position = CaretPosition {
             row: position.row,
-            column: Self::get_len_left_margin(),
+            column: self.get_len_left_margin(),
         };
     }
 
@@ -176,7 +217,7 @@ impl UiComponent for CommandBar {
 
     /// Method to actually draw the component, must be implemented by each component
     fn draw(&mut self, origin_y: usize) -> Result<(), std::io::Error> {
-        let line = SAVE_AS_STRING.to_string() + &self.line_to_string();
+        let line = self.construct_line();
         Terminal::print_row(origin_y, &line)
     }
 }

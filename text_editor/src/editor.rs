@@ -6,7 +6,7 @@ mod terminal;
 mod ui_component;
 
 use crate::editor::Command::{Edit, Move, System};
-use crate::editor::command::System::{Abort, Quit, Resize, Save};
+use crate::editor::command::System::{Abort, Quit, Resize, Save, Search};
 use command::Command;
 use crossterm::event::Event;
 use std::io::Error;
@@ -141,6 +141,7 @@ impl Editor {
 
         match command {
             System(Quit | Resize(_) | Abort) => (),
+            System(Search) => self.handle_search(),
             System(Save) => self.handle_save(),
             Move(move_command) => self.view.handle_move_command(move_command),
             Edit(edit_command) => self.view.handle_edit_command(edit_command),
@@ -149,11 +150,11 @@ impl Editor {
 
     fn handle_command_command(&mut self, command: Command) {
         match command {
-            System(Quit | Save) => (),
+            System(Quit | Save | Search) => (),
             System(Resize(size)) => self.resize(size),
             System(Abort) => self.abort_command_mode(),
             Move(move_command) => self.command_bar.handle_move_command(move_command),
-            Edit(edit_command) => self.command_bar.handle_edit_command(edit_command),
+            Edit(edit_command) => self.command_bar.handle_edit_command(edit_command)
         }
 
         if let Command::Edit(command::Edit::Enter) = command {
@@ -165,11 +166,18 @@ impl Editor {
 
     fn abort_command_mode(&mut self) {
         self.mode = Mode::Editing;
+        self.command_bar.handle_system_command(command::System::Abort);
+    }
+
+    fn handle_search(&mut self) {
+       self.mode = Mode::Command;
+       self.command_bar.handle_system_command(command::System::Search);
     }
 
     fn handle_save(&mut self) {
         if !self.view.is_file_given() {
             self.mode = Mode::Command;
+            self.command_bar.handle_system_command(command::System::Save);
             return;
         }
 

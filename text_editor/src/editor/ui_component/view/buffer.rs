@@ -26,6 +26,22 @@ impl Buffer {
         self.file_name = Some(file_name.to_string());
     }
 
+    // =========================================================== Search ===============================================================
+
+    pub fn find(&self, search_string: &str) -> Option<Location> {
+
+        for (line_idx, line) in self.data.iter().enumerate() {
+           if let Some(graph_idx) = line.find(search_string) {
+               return Some(Location{
+                   line_index: line_idx,
+                   grapheme_index: graph_idx
+               });
+           }
+        }
+
+        None
+    }
+
     // ============================================================= Getters ==========================================================
 
     pub fn get_file_name(&self) -> Option<String> {

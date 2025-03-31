@@ -26,6 +26,7 @@ In the end final projects will be similar but I am more lazy and quality of this
 7. Added expiration to messages
 8. Save as added
 8. Better String handling in Line
+9. Simple Search
 
 #### Bugs: 
 - ghost image of auto resizing before applying propper view

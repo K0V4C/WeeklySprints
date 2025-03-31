@@ -26,12 +26,18 @@ impl MessageBar {
         }
     }
 
+    pub fn back_to_defaulf(&mut self) {
+        self.message_string = Self::default_message();
+        self.mark_redraw(true);
+    }
+
     pub fn update_message(&mut self, new_message: &str) {
         self.start_messasge_timer();
         self.message_string = new_message.to_string();
         self.mark_redraw(true);
     }
 
+    // There migh be a weird *BUG* in this function
     pub fn check_message_expired(&mut self, limit: Duration) {
         let now = Instant::now();
         let elapsed = now.duration_since(self.last_render);

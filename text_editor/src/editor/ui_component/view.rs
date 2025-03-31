@@ -20,6 +20,11 @@ const EDITOR_NAME: &str = "HECTO";
 const EDITOR_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Clone, Copy, Default, Debug)]
+struct SearchInfo {
+    prev_location: Location
+}
+
+#[derive(Clone, Copy, Default, Debug)]
 pub struct Location {
     pub grapheme_index: usize,
     pub line_index: usize,
@@ -31,6 +36,7 @@ pub struct View {
     size: TerminalSize,
     text_location: Location,
     scroll_offset: CaretPosition,
+    search_info: Option<SearchInfo>
 }
 
 impl View {
@@ -50,6 +56,7 @@ impl View {
             size: margined_size,
             text_location: Location::default(),
             scroll_offset: CaretPosition::default(),
+            search_info: Some(SearchInfo::default())
         }
     }
 
@@ -216,6 +223,7 @@ impl View {
     fn enter(&mut self) {
         self.buffer.insert_newline(self.text_location);
         self.move_text_location(Move::Down);
+        self.move_to_start_line();
         self.mark_redraw(true);
     }
 
@@ -227,6 +235,34 @@ impl View {
         self.buffer.save()
     }
 
+    pub fn search(&mut self, search_string: String) {
+
+        if search_string.is_empty() {
+            return;
+        }
+
+        if let Some(found) =  self.buffer.find(&search_string) {
+            self.text_location = found;
+            self.scroll_text_location_into_view();
+        }
+    }
+
+    pub fn enter_search(&mut self) {
+        self.search_info = Some(SearchInfo{prev_location: self.text_location});
+    }
+
+    pub fn dissmiss_search(&mut self) {
+        if let Some(loc) = self.search_info {
+            self.text_location = loc.prev_location;
+        }
+
+        self.search_info = None;
+        self.scroll_text_location_into_view();
+    }
+
+    pub fn exit_search(&mut self) {
+        self.search_info = None;
+    }
     // =========================================== SCROLLING ===================================================
     fn scroll_text_location_into_view(&mut self) {
         let CaretPosition { column, row } = self.text_location_to_position();

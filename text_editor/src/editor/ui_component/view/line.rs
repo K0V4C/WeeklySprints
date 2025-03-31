@@ -59,6 +59,28 @@ impl Line {
         self.fragments = Self::str_to_fragments(&self.to_string());
     }
 
+    // ========================================================= Find ==================================================================
+
+    fn byte_idx_to_grapheme_idx(&self, byte_idx: usize) -> usize {
+        for (grapheme_idx, fragment) in self.fragments.iter().enumerate() {
+                    if fragment.start_byte_idx >= byte_idx {
+                        return grapheme_idx;
+                    }
+                }
+                #[cfg(debug_assertions)]
+                {
+                    panic!("Invalid byte_idx passed to byte_idx_to_grapheme_idx: {byte_idx:?}");
+                }
+                #[cfg(not(debug_assertions))]
+                {
+                    0
+                }
+    }
+
+    pub fn find(&self, search_string: &str) -> Option<usize> {
+        self.string.find(search_string).map(|x| self.byte_idx_to_grapheme_idx(x))
+    }
+
     // ========================================================== String manipulation ==================================================
 
     pub fn add_character_to_line(&mut self, chr: char, at: usize) {
@@ -149,10 +171,11 @@ impl Line {
         }
     }
 
-    ///////////////////////////////////////////// HELPER METHODS ////////////////////////////////////////////////
+    // =====================================================  HELPER METHODS =========================================================
 
     pub fn clear(&mut self) {
         self.fragments.clear();
+        self.string.clear();
     }
 
     fn str_to_fragments(line_str: &str) -> Vec<TextFragment> {

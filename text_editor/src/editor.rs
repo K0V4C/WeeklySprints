@@ -25,8 +25,12 @@ const QUIT_COUNTER_START: usize = 3;
 
 enum Mode {
     Editing,
-    Command,
+    SavingAs,
+    Searching
 }
+
+const SAVE_PROMPT: &str = "Save As: ";
+const SEARCH_PROMPT: &str = "Search: ";
 
 pub struct Editor {
     should_quit: bool,
@@ -124,10 +128,10 @@ impl Editor {
     }
 
     fn handle_command(&mut self, command: Command) {
-        if matches!(self.mode, Mode::Editing) {
-            self.handle_editing_command(command);
-        } else if matches!(self.mode, Mode::Command) {
-            self.handle_command_command(command);
+        match self.mode {
+            Mode::Editing => self.handle_editing_command(command),
+            Mode::SavingAs => self.handle_save_command(command),
+            Mode::Searching => self.handle_search_command(command),
         }
     }
 
@@ -148,36 +152,63 @@ impl Editor {
         }
     }
 
-    fn handle_command_command(&mut self, command: Command) {
+    fn handle_save_command(&mut self, command: Command) {
         match command {
-            System(Quit | Save | Search) => (),
             System(Resize(size)) => self.resize(size),
-            System(Abort) => self.abort_command_mode(),
-            Move(move_command) => self.command_bar.handle_move_command(move_command),
-            Edit(edit_command) => self.command_bar.handle_edit_command(edit_command)
+            System(Abort) => self.exit_mode(),
+            Edit(edit_command) => self.command_bar.handle_edit_command(edit_command),
+            _ => ()
         }
 
         if let Command::Edit(command::Edit::Enter) = command {
             self.view
                 .set_buffer_file(&self.command_bar.get_command_line());
-            self.abort_command_mode();
+            self.exit_mode();
+            self.handle_save();
         }
     }
 
-    fn abort_command_mode(&mut self) {
-        self.mode = Mode::Editing;
-        self.command_bar.handle_system_command(command::System::Abort);
+    fn handle_search_command(&mut self, command: Command) {
+        match command {
+            System(Resize(size)) => self.resize(size),
+            System(Abort) => self.dismiss_search(),
+            Edit(command::Edit::Enter) => self.exit_search(),
+            Edit(edit_command) => self.handle_edit_search(edit_command),
+            _ => ()
+        }
     }
 
-    fn handle_search(&mut self) {
-       self.mode = Mode::Command;
-       self.command_bar.handle_system_command(command::System::Search);
+    fn handle_edit_search(&mut self, edit_command: command::Edit) {
+        self.command_bar.handle_edit_command(edit_command);
+        let search_string = self.command_bar.get_line();
+        self.view.search(search_string);
     }
+
+    fn dismiss_search(&mut self) {
+        self.view.dissmiss_search();
+        self.exit_mode();
+    }
+
+    fn exit_search(&mut self) {
+        self.view.exit_search();
+        self.exit_mode();
+        #[cfg(debug_assertions)]
+        {
+            debug_assert!(matches!(self.mode, Mode::Editing));
+        }
+    }
+
+    // ================================================== Mode switching ================================================================
+
+    fn handle_search(&mut self) {
+        self.view.enter_search();
+        self.enter_search_mode();
+    }
+
 
     fn handle_save(&mut self) {
         if !self.view.is_file_given() {
-            self.mode = Mode::Command;
-            self.command_bar.handle_system_command(command::System::Save);
+            self.enter_save_mode();
             return;
         }
 
@@ -188,6 +219,24 @@ impl Editor {
                 self.message_bar.update_message("File saved sucessfully!");
             }
         }
+    }
+
+    // ==================================================== Mode manipulation ========================================================
+
+    fn enter_save_mode(&mut self) {
+        self.mode = Mode::SavingAs;
+        self.command_bar.set_prompt(SAVE_PROMPT.to_string());
+    }
+
+    fn enter_search_mode(&mut self) {
+        self.mode = Mode::Searching;
+        self.command_bar.set_prompt(SEARCH_PROMPT.to_string());
+    }
+
+    fn exit_mode(&mut self) {
+        self.mode = Mode::Editing;
+        self.command_bar.clear_line();
+        self.message_bar.back_to_defaulf();
     }
 
     fn reset_quit_counter(&mut self) {
@@ -243,19 +292,18 @@ impl Editor {
     }
 
     fn move_caret(&self) {
-        if matches!(self.mode, Mode::Editing) {
-            let _ = Terminal::move_caret_to(self.view.caret_position());
-        } else if matches!(self.mode, Mode::Command) {
+        let position = if matches!(self.mode, Mode::Editing) {
+            self.view.caret_position()
+        } else {
             let row = Terminal::size().unwrap_or_default().rows.saturating_sub(1);
-            let caret_pos = self.command_bar.caret_position();
+            let caret_pos = self.command_bar.caret_position_column();
 
-            let position = CaretPosition {
-                row: row.saturating_add(caret_pos.row),
-                column: caret_pos.column,
-            };
-
-            let _ = Terminal::move_caret_to(position);
-        }
+            CaretPosition {
+                row,
+                column: caret_pos,
+            }
+        };
+        let _ = Terminal::move_caret_to(position);
     }
 
     fn render_components(&mut self) {
@@ -279,7 +327,7 @@ impl Editor {
             self.message_bar.check_message_expired(FIVE_SECONDS);
             self.message_bar
                 .render(terminal_size.rows.saturating_sub(1));
-        } else if matches!(self.mode, Mode::Command) {
+        } else {
             self.command_bar
                 .render(terminal_size.rows.saturating_sub(1));
         }

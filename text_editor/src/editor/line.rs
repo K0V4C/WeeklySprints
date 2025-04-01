@@ -65,36 +65,68 @@ impl Line {
     }
 
     // ========================================================= Find ==================================================================
-
+    fn grapheme_idx_to_byte_idx(&self, grapheme_idx: GraphemeIdx) -> ByteIdx {
+        self.fragments
+            .get(grapheme_idx)
+            .map_or(0, |fragment| fragment.start_byte_idx)
+    }
+    
     fn byte_idx_to_grapheme_idx(&self, byte_idx: ByteIdx) -> GraphemeIdx {
-        for (grapheme_idx, fragment) in self.fragments.iter().enumerate() {
-            if fragment.start_byte_idx >= byte_idx {
-                return grapheme_idx;
-            }
-        }
-        #[cfg(debug_assertions)]
-        {
-            panic!("Invalid byte_idx passed to byte_idx_to_grapheme_idx: {byte_idx:?}");
-        }
-        #[cfg(not(debug_assertions))]
-        {
-            0
-        }
+        self.fragments
+            .iter()
+            .position(|fragment| fragment.start_byte_idx >= byte_idx)
+            .map_or(0, |grapheme_idx| grapheme_idx)
     }
 
-    pub fn forward_find(&self, search_string: &str, start_look_point: GraphemeIdx) -> Option<GraphemeIdx> {
+    pub fn backward_find(
+        &self,
+        search_string: &str,
+        end_point: GraphemeIdx,
+    ) -> Option<GraphemeIdx> {
+        if end_point > self.string.len() {
+            return None;
+        }
+
+        // TODO: need to fix this
+        let slice = &self.string[..self.grapheme_idx_to_byte_idx(end_point)];
+
+        slice
+            .rmatch_indices(search_string)
+            .next()
+            .map(|(byte_idx, _)| self.byte_idx_to_grapheme_idx(byte_idx))
+    }
+
+    pub fn forward_find(
+        &self,
+        search_string: &str,
+        start_look_point: GraphemeIdx,
+    ) -> Option<GraphemeIdx> {
         if start_look_point >= self.string.len() {
             return None;
         }
 
-        let slice = &self.string[start_look_point..];
+        let slice = &self.string[self.grapheme_idx_to_byte_idx(start_look_point)..];
 
         slice
-            .find(search_string)
-            .map(|x| self.byte_idx_to_grapheme_idx(x.saturating_add(start_look_point)))
-
+            .match_indices(search_string)
+            .next()
+            .map(|(byte_idx, _)| {
+                self.byte_idx_to_grapheme_idx(byte_idx.saturating_add(start_look_point))
+            })
     }
+    
+    // TODO: need to fix this 
+    pub fn get_next_match_idx(&self, start_idx: GraphemeIdx, search_string: &str) -> GraphemeIdx {
+        if start_idx >= self.string.len() {
+            return 1;
+        }
 
+        let slice = &self.string[self.grapheme_idx_to_byte_idx(start_idx)..];
+
+        slice.match_indices(search_string).next().map_or(1, |x| {
+            self.byte_idx_to_grapheme_idx(x.0.saturating_add(start_idx))
+        })
+    }
     // ========================================================== String manipulation ==================================================
 
     pub fn add_character_to_line(&mut self, chr: char, at: GraphemeIdx) {

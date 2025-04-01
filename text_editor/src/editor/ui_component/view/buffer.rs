@@ -30,6 +30,67 @@ impl Buffer {
 
     // =========================================================== Search ===============================================================
 
+    pub fn backward_find(
+        &self,
+        search_string: &str,
+        current_location: Location,
+    ) -> Option<Location> {
+        let current_line = self.data.get(current_location.line_idx);
+
+        let lines_after = self
+            .data
+            .iter()
+            .enumerate()
+            .filter(|(idx, _)| *idx >= current_location.line_idx)
+            .rev();
+
+        let lines_before = self
+            .data
+            .iter()
+            .enumerate()
+            .filter(|(idx, _)| *idx < current_location.line_idx)
+            .rev();
+
+        // Try to find on current line
+        if let Some(line) = current_line {
+            if let Some(graph_idx) =
+                line.backward_find(search_string, current_location.grapheme_idx)
+            {
+                return Some(Location {
+                    line_idx: current_location.line_idx,
+                    grapheme_idx: graph_idx,
+                });
+            }
+        }
+
+        // Try to look backward
+        if let Some(found) = Self::search_backward(search_string, lines_before) {
+            return Some(found);
+        }
+
+        // Loop around and search
+        if let Some(found) = Self::search_backward(search_string, lines_after) {
+            return Some(found);
+        }
+
+        None
+    }
+
+    pub fn next_valid_search_location(&self, loc: Location, search_string: &str) -> Location {
+        let value = self
+            .data
+            .get(loc.line_idx)
+            .map_or(Line::from(search_string).grapheme_count(), |x| {
+                x.get_next_match_idx(loc.grapheme_idx, search_string)
+            });
+        let offset = std::cmp::min(1, value);
+
+        Location {
+            grapheme_idx: loc.grapheme_idx.saturating_add(offset),
+            line_idx: loc.line_idx,
+        }
+    }
+
     pub fn forward_find(
         &self,
         search_string: &str,
@@ -42,17 +103,16 @@ impl Buffer {
             .iter()
             .enumerate()
             .filter(|(idx, _)| *idx > current_location.line_idx);
-        
+
         let lines_before = self
             .data
             .iter()
             .enumerate()
             .filter(|(idx, _)| *idx <= current_location.line_idx);
-        
+
         // Try to find on current line
         if let Some(line) = current_line {
-            if let Some(graph_idx) =
-                line.forward_find(search_string, current_location.grapheme_idx)
+            if let Some(graph_idx) = line.forward_find(search_string, current_location.grapheme_idx)
             {
                 return Some(Location {
                     line_idx: current_location.line_idx,
@@ -90,6 +150,23 @@ impl Buffer {
         None
     }
 
+    fn search_backward<'a, I>(search_string: &'a str, line_pile: I) -> Option<Location>
+    where
+        I: Iterator<Item = (usize, &'a Line)>,
+    {
+        // Try to look forward
+        for (line_idx, line) in line_pile {
+            if let Some(graph_idx) =
+                line.backward_find(search_string, line.grapheme_count().saturating_sub(1))
+            {
+                return Some(Location {
+                    line_idx,
+                    grapheme_idx: graph_idx,
+                });
+            }
+        }
+        None
+    }
     // ============================================================= Getters ==========================================================
 
     pub fn get_file_name(&self) -> Option<String> {
@@ -106,11 +183,6 @@ impl Buffer {
 
     pub fn get_number_of_lines(&self) -> usize {
         self.data.len()
-    }
-
-    pub fn get_line_length(&self, line_idx: usize) -> Option<usize> {
-        self.data
-            .get(line_idx).map(Line::grapheme_count)
     }
 
     // ====================================================== Buffer Edditing ===================================================

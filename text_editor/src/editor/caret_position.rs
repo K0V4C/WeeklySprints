@@ -1,4 +1,3 @@
-
 pub type Col = usize;
 pub type Row = usize;
 

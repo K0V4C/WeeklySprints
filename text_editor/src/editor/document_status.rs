@@ -1,6 +1,5 @@
 use super::caret_position::CaretPosition;
 
-
 #[derive(Default)]
 pub struct DocumentStatus {
     pub caret_position: CaretPosition,

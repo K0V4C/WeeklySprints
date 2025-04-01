@@ -28,6 +28,7 @@ In the end final projects will be similar but I am more lazy and quality of this
 8. Better String handling in Line
 9. Simple Search
 10. Advanced Search with movement
+10. Even more advanced search
 
 #### Bugs: 
 - *EMOJIS DONT WORK AND THEY HAVE TO GET FIXED*
@@ -38,6 +39,8 @@ In the end final projects will be similar but I am more lazy and quality of this
 - terminal smaller then 3 rows just breaks 
 - weird bug when going full screen, somehow related to cluster emojies
 - Rendering order 
+- For some reason backward search doesnt work with method and works without it
+- Have to fix foward search
 
 #### Improve:
 - No need to redraw as many times as I do

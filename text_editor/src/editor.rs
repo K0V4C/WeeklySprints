@@ -1,9 +1,9 @@
 use crate::editor::ui_component::UiComponent;
 
-mod line;
 mod caret_position;
 mod command;
 mod document_status;
+mod line;
 mod terminal;
 mod ui_component;
 
@@ -187,7 +187,8 @@ impl Editor {
 
         match move_command {
             command::Move::Right | command::Move::Down => self.view.search_next(&search_string),
-            _ => ()
+            command::Move::Left | command::Move::Up => self.view.search_previous(&search_string),
+            _ => (),
         }
     }
 
@@ -304,17 +305,18 @@ impl Editor {
     }
 
     fn move_caret(&self) {
-        let position = if (matches!(self.mode, Mode::Editing) || matches!(self.mode, Mode::Searching)) {
-            self.view.caret_position()
-        } else {
-            let row = Terminal::size().unwrap_or_default().rows.saturating_sub(1);
-            let caret_pos = self.command_bar.caret_position_column();
+        let position =
+            if (matches!(self.mode, Mode::Editing) || matches!(self.mode, Mode::Searching)) {
+                self.view.caret_position()
+            } else {
+                let row = Terminal::size().unwrap_or_default().rows.saturating_sub(1);
+                let caret_pos = self.command_bar.caret_position_column();
 
-            CaretPosition {
-                row,
-                column: caret_pos,
-            }
-        };
+                CaretPosition {
+                    row,
+                    column: caret_pos,
+                }
+            };
         let _ = Terminal::move_caret_to(position);
     }
 

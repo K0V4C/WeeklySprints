@@ -1,5 +1,7 @@
 use crate::editor::{
-    command::Edit, line::Line, terminal::{Terminal, TerminalSize}
+    command::Edit,
+    line::Line,
+    terminal::{Terminal, TerminalSize},
 };
 
 use super::UiComponent;

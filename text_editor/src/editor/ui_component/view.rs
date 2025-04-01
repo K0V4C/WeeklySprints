@@ -1,7 +1,7 @@
 mod buffer;
-mod search_info;
 mod location;
 mod messages;
+mod search_info;
 
 use std::cmp;
 
@@ -11,15 +11,17 @@ use messages::Message;
 use search_info::SearchInfo;
 
 use crate::editor::{
-    caret_position::CaretPosition, command::{Edit, Move}, document_status::DocumentStatus, line::Line, terminal::{Terminal, TerminalSize}
+    caret_position::CaretPosition,
+    command::{Edit, Move},
+    document_status::DocumentStatus,
+    line::Line,
+    terminal::{Terminal, TerminalSize},
 };
 
 use super::UiComponent;
 
 const EDITOR_NAME: &str = "HECTO";
 const EDITOR_VERSION: &str = env!("CARGO_PKG_VERSION");
-
-
 
 pub struct View {
     buffer: Buffer,
@@ -228,10 +230,21 @@ impl View {
 
     // ======================================= SEARCH =================================================================
 
+    pub fn search_previous(&mut self, search_string: &str) {
+        let before_location = Location {
+            grapheme_idx: self.text_location.grapheme_idx.saturating_sub(1),
+            line_idx: self.text_location.line_idx,
+        };
+
+        self.reverse_query(search_string, before_location);
+    }
+
     pub fn search_next(&mut self, search_string: &str) {
-        if let Some(location) = self.next_valid_location() {
-            self.query(search_string, location);
-        }
+        self.query(
+            search_string,
+            self.buffer
+                .next_valid_search_location(self.text_location, search_string),
+        );
     }
 
     pub fn search(&mut self, search_string: &str) {
@@ -249,22 +262,33 @@ impl View {
         }
     }
 
+    fn reverse_query(&mut self, search_string: &str, start_location: Location) {
+        if search_string.is_empty() {
+            return;
+        }
+        if let Some(found) = self.buffer.backward_find(search_string, start_location) {
+            self.text_location = found;
+            self.scroll_text_location_into_view();
+            self.center_text_location();
+        }
+    }
+
     pub fn enter_search(&mut self) {
         self.search_info = Some(SearchInfo {
             prev_location: self.text_location,
         });
     }
-    
+
     fn center_text_location(&mut self) {
         let TerminalSize { columns, rows } = self.size;
         let CaretPosition { column, row } = self.text_location_to_position();
-        
+
         let vertical_middle = rows.div_ceil(2);
         let horizontal_middle = columns.div_ceil(2);
-        
-        self.scroll_offset.row  = row.saturating_sub(vertical_middle);
+
+        self.scroll_offset.row = row.saturating_sub(vertical_middle);
         self.scroll_offset.column = column.saturating_sub(horizontal_middle);
-        
+
         self.needs_redraw = true;
     }
 
@@ -325,35 +349,6 @@ impl View {
     }
 
     // =========================================== HELPERS =====================================================
-
-    fn next_valid_location(&self) -> Option<Location> {
-        let line_len = self.buffer.get_line_length(self.text_location.line_idx)?;
-        
-        let Location {
-            grapheme_idx,
-            line_idx,
-        } = self.text_location;
-
-        let res = if grapheme_idx.saturating_add(1) > line_len
-            && line_idx >= self.buffer.get_number_of_lines()
-        {
-            Location {
-                line_idx: 0,
-                grapheme_idx: 0,
-            }
-        } else if grapheme_idx.saturating_add(1) > line_len {
-            Location {
-                line_idx: line_idx.saturating_add(1),
-                grapheme_idx: 0,
-            }
-        } else {
-            Location {
-                line_idx,
-                grapheme_idx: grapheme_idx.saturating_add(1),
-            }
-        };
-        Some(res)
-    }
 
     // =========================================== SNAPING =====================================================
 
@@ -427,9 +422,11 @@ impl View {
 
     fn text_location_to_position(&self) -> CaretPosition {
         let row = self.text_location.line_idx;
-        let col = self.buffer.data.get(row).map_or(0, |line| {
-            line.width_until(self.text_location.grapheme_idx)
-        });
+        let col = self
+            .buffer
+            .data
+            .get(row)
+            .map_or(0, |line| line.width_until(self.text_location.grapheme_idx));
         CaretPosition { column: col, row }
     }
 }

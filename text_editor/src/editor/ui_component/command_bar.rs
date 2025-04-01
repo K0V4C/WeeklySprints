@@ -1,12 +1,14 @@
-use crate::editor::{command::Edit, terminal::{Terminal, TerminalSize}};
+use crate::editor::{
+    command::Edit, line::Line, terminal::{Terminal, TerminalSize}
+};
 
-use super::{UiComponent, view::line::Line};
+use super::UiComponent;
 
 pub struct CommandBar {
     needs_redraw: bool,
     size: TerminalSize,
     command_line: Line,
-    prompt: String
+    prompt: String,
 }
 
 impl CommandBar {
@@ -18,25 +20,27 @@ impl CommandBar {
             needs_redraw: true,
             size,
             command_line: Line::default(),
-            prompt: String::new()
+            prompt: String::new(),
         }
     }
 
     pub fn handle_edit_command(&mut self, command: Edit) {
-         match command {
-             Edit::Input(character) => self.add_to_buffer(character),
-             Edit::Backspace => self.delete(),
-             _ => {}
-         }
-         self.mark_redraw(true);
+        match command {
+            Edit::Input(character) => self.add_to_buffer(character),
+            Edit::Backspace => self.delete(),
+            _ => {}
+        }
+        self.mark_redraw(true);
     }
 
     fn add_to_buffer(&mut self, chr: char) {
-        self.command_line.add_character_to_line(chr, self.command_line.grapheme_count());
+        self.command_line
+            .add_character_to_line(chr, self.command_line.grapheme_count());
     }
 
     fn delete(&mut self) {
-        self.command_line.delete_character(self.command_line.grapheme_count().saturating_sub(1));
+        self.command_line
+            .delete_character(self.command_line.grapheme_count().saturating_sub(1));
     }
 
     pub fn get_command_line(&self) -> String {
@@ -55,7 +59,10 @@ impl CommandBar {
     }
 
     pub fn caret_position_column(&self) -> usize {
-        let x = self.prompt.len().saturating_add(self.command_line.grapheme_count());
+        let x = self
+            .prompt
+            .len()
+            .saturating_add(self.command_line.grapheme_count());
 
         std::cmp::min(x, self.size.columns)
     }
@@ -63,7 +70,6 @@ impl CommandBar {
     pub fn get_line(&self) -> String {
         self.command_line.to_string()
     }
-
 }
 
 impl UiComponent for CommandBar {
@@ -90,7 +96,8 @@ impl UiComponent for CommandBar {
         let message = format!(
             "{}{}",
             self.prompt,
-            self.command_line.get_visable_graphemes(value_start..value_end)
+            self.command_line
+                .get_visable_graphemes(value_start..value_end)
         );
         let to_print = if message.len() <= self.size.columns {
             message

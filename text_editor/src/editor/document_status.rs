@@ -1,4 +1,5 @@
-use super::terminal::CaretPosition;
+use super::caret_position::CaretPosition;
+
 
 #[derive(Default)]
 pub struct DocumentStatus {

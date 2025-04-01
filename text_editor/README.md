@@ -27,8 +27,10 @@ In the end final projects will be similar but I am more lazy and quality of this
 8. Save as added
 8. Better String handling in Line
 9. Simple Search
+10. Advanced Search with movement
 
 #### Bugs: 
+- *EMOJIS DONT WORK AND THEY HAVE TO GET FIXED*
 - ghost image of auto resizing before applying propper view
 - random crash when resizing
 - pressing RIGHT goes twice FIXED

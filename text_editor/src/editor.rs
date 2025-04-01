@@ -1,5 +1,7 @@
 use crate::editor::ui_component::UiComponent;
 
+mod line;
+mod caret_position;
 mod command;
 mod document_status;
 mod terminal;
@@ -7,6 +9,7 @@ mod ui_component;
 
 use crate::editor::Command::{Edit, Move, System};
 use crate::editor::command::System::{Abort, Quit, Resize, Save, Search};
+use caret_position::CaretPosition;
 use command::Command;
 use crossterm::event::Event;
 use std::io::Error;
@@ -19,18 +22,18 @@ use ui_component::{
 
 use crossterm::event::read;
 
-use terminal::{CaretPosition, Terminal, TerminalSize};
+use terminal::{Terminal, TerminalSize};
 
 const QUIT_COUNTER_START: usize = 3;
 
 enum Mode {
     Editing,
     SavingAs,
-    Searching
+    Searching,
 }
 
 const SAVE_PROMPT: &str = "Save As: ";
-const SEARCH_PROMPT: &str = "Search: ";
+const SEARCH_PROMPT: &str = "Search (Esc to cancel, Arrows to navigate): ";
 
 pub struct Editor {
     should_quit: bool,
@@ -157,7 +160,7 @@ impl Editor {
             System(Resize(size)) => self.resize(size),
             System(Abort) => self.exit_mode(),
             Edit(edit_command) => self.command_bar.handle_edit_command(edit_command),
-            _ => ()
+            _ => (),
         }
 
         if let Command::Edit(command::Edit::Enter) = command {
@@ -174,6 +177,16 @@ impl Editor {
             System(Abort) => self.dismiss_search(),
             Edit(command::Edit::Enter) => self.exit_search(),
             Edit(edit_command) => self.handle_edit_search(edit_command),
+            Move(move_command) => self.handle_move_search(move_command),
+            System(_) => (),
+        }
+    }
+
+    fn handle_move_search(&mut self, move_command: command::Move) {
+        let search_string = self.command_bar.get_line();
+
+        match move_command {
+            command::Move::Right | command::Move::Down => self.view.search_next(&search_string),
             _ => ()
         }
     }
@@ -181,7 +194,7 @@ impl Editor {
     fn handle_edit_search(&mut self, edit_command: command::Edit) {
         self.command_bar.handle_edit_command(edit_command);
         let search_string = self.command_bar.get_line();
-        self.view.search(search_string);
+        self.view.search(&search_string);
     }
 
     fn dismiss_search(&mut self) {
@@ -204,7 +217,6 @@ impl Editor {
         self.view.enter_search();
         self.enter_search_mode();
     }
-
 
     fn handle_save(&mut self) {
         if !self.view.is_file_given() {
@@ -292,7 +304,7 @@ impl Editor {
     }
 
     fn move_caret(&self) {
-        let position = if matches!(self.mode, Mode::Editing) {
+        let position = if (matches!(self.mode, Mode::Editing) || matches!(self.mode, Mode::Searching)) {
             self.view.caret_position()
         } else {
             let row = Terminal::size().unwrap_or_default().rows.saturating_sub(1);

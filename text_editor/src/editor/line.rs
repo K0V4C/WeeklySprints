@@ -3,6 +3,9 @@ use std::ops::Range;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
+type GraphemeIdx = usize;
+type ByteIdx = usize;
+
 #[derive(Copy, Clone, Debug)]
 pub enum GraphemeWidth {
     Half,
@@ -17,25 +20,27 @@ impl GraphemeWidth {
         }
     }
 }
-
+#[derive(Clone)]
 pub struct TextFragment {
     grapheme: String,
     rendered_width: GraphemeWidth,
     replacement: Option<char>,
-    start_byte_idx: usize,
+    start_byte_idx: ByteIdx,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Line {
     fragments: Vec<TextFragment>,
-    string: String
+    string: String,
 }
 
 impl Line {
-
     pub fn from(line_str: &str) -> Self {
         let fragments = Self::str_to_fragments(line_str);
-        Line { fragments, string: String::from(line_str)}
+        Line {
+            fragments,
+            string: String::from(line_str),
+        }
     }
 
     pub fn concat(&mut self, concat_line: &Line) {
@@ -43,7 +48,7 @@ impl Line {
         self.rebuild_fragments();
     }
 
-    pub fn split_off(&mut self, at: usize) -> Line {
+    pub fn split_off(&mut self, at: GraphemeIdx) -> Line {
         if let Some(fragment) = self.fragments.get(at) {
             let remainder = self.string.split_off(fragment.start_byte_idx);
             self.rebuild_fragments();
@@ -61,29 +66,38 @@ impl Line {
 
     // ========================================================= Find ==================================================================
 
-    fn byte_idx_to_grapheme_idx(&self, byte_idx: usize) -> usize {
+    fn byte_idx_to_grapheme_idx(&self, byte_idx: ByteIdx) -> GraphemeIdx {
         for (grapheme_idx, fragment) in self.fragments.iter().enumerate() {
-                    if fragment.start_byte_idx >= byte_idx {
-                        return grapheme_idx;
-                    }
-                }
-                #[cfg(debug_assertions)]
-                {
-                    panic!("Invalid byte_idx passed to byte_idx_to_grapheme_idx: {byte_idx:?}");
-                }
-                #[cfg(not(debug_assertions))]
-                {
-                    0
-                }
+            if fragment.start_byte_idx >= byte_idx {
+                return grapheme_idx;
+            }
+        }
+        #[cfg(debug_assertions)]
+        {
+            panic!("Invalid byte_idx passed to byte_idx_to_grapheme_idx: {byte_idx:?}");
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            0
+        }
     }
 
-    pub fn find(&self, search_string: &str) -> Option<usize> {
-        self.string.find(search_string).map(|x| self.byte_idx_to_grapheme_idx(x))
+    pub fn forward_find(&self, search_string: &str, start_look_point: GraphemeIdx) -> Option<GraphemeIdx> {
+        if start_look_point >= self.string.len() {
+            return None;
+        }
+
+        let slice = &self.string[start_look_point..];
+
+        slice
+            .find(search_string)
+            .map(|x| self.byte_idx_to_grapheme_idx(x.saturating_add(start_look_point)))
+
     }
 
     // ========================================================== String manipulation ==================================================
 
-    pub fn add_character_to_line(&mut self, chr: char, at: usize) {
+    pub fn add_character_to_line(&mut self, chr: char, at: GraphemeIdx) {
         if let Some(fragment) = self.fragments.get(at) {
             self.string.insert(fragment.start_byte_idx, chr);
         } else {
@@ -92,7 +106,7 @@ impl Line {
         self.rebuild_fragments();
     }
 
-    pub fn delete_character(&mut self, at: usize) {
+    pub fn delete_character(&mut self, at: GraphemeIdx) {
         if let Some(fragment) = self.fragments.get(at) {
             let start = fragment.start_byte_idx;
             let end = fragment
@@ -105,7 +119,7 @@ impl Line {
 
     // ============================================================= Getters =====================================================
 
-    pub fn get_visable_graphemes(&self, range: Range<usize>) -> String {
+    pub fn get_visable_graphemes(&self, range: Range<GraphemeIdx>) -> String {
         if range.start >= range.end {
             return String::new();
         }
@@ -136,11 +150,11 @@ impl Line {
         result
     }
 
-    pub fn grapheme_count(&self) -> usize {
+    pub fn grapheme_count(&self) -> GraphemeIdx {
         self.fragments.len()
     }
 
-    pub fn width_until(&self, grapheme_index: usize) -> usize {
+    pub fn width_until(&self, grapheme_index: GraphemeIdx) -> GraphemeIdx {
         self.fragments
             .iter()
             .take(grapheme_index)
@@ -180,29 +194,29 @@ impl Line {
 
     fn str_to_fragments(line_str: &str) -> Vec<TextFragment> {
         line_str
-                .grapheme_indices(true)
-                .map(|(byte_idx, grapheme)| {
-                    let (replacement, rendered_width) = Self::get_replacement_character(grapheme)
-                        .map_or_else(
-                            || {
-                                let unicode_width = grapheme.width();
-                                let rendered_width = match unicode_width {
-                                    0 | 1 => GraphemeWidth::Half,
-                                    _ => GraphemeWidth::Full,
-                                };
-                                (None, rendered_width)
-                            },
-                            |replacement| (Some(replacement), GraphemeWidth::Half),
-                        );
+            .grapheme_indices(true)
+            .map(|(byte_idx, grapheme)| {
+                let (replacement, rendered_width) = Self::get_replacement_character(grapheme)
+                    .map_or_else(
+                        || {
+                            let unicode_width = grapheme.width();
+                            let rendered_width = match unicode_width {
+                                0 | 1 => GraphemeWidth::Half,
+                                _ => GraphemeWidth::Full,
+                            };
+                            (None, rendered_width)
+                        },
+                        |replacement| (Some(replacement), GraphemeWidth::Half),
+                    );
 
-                    TextFragment {
-                        grapheme: grapheme.to_string(),
-                        rendered_width,
-                        replacement,
-                        start_byte_idx: byte_idx,
-                    }
-                })
-                .collect()
+                TextFragment {
+                    grapheme: grapheme.to_string(),
+                    rendered_width,
+                    replacement,
+                    start_byte_idx: byte_idx,
+                }
+            })
+            .collect()
     }
 }
 

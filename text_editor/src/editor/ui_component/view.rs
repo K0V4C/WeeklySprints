@@ -1,17 +1,17 @@
 mod buffer;
-pub mod line;
+mod search_info;
+mod location;
 mod messages;
 
 use std::cmp;
 
 use buffer::Buffer;
-use line::Line;
+use location::Location;
 use messages::Message;
+use search_info::SearchInfo;
 
 use crate::editor::{
-    command::{Edit, Move},
-    document_status::DocumentStatus,
-    terminal::{CaretPosition, Terminal, TerminalSize},
+    caret_position::CaretPosition, command::{Edit, Move}, document_status::DocumentStatus, line::Line, terminal::{Terminal, TerminalSize}
 };
 
 use super::UiComponent;
@@ -19,16 +19,7 @@ use super::UiComponent;
 const EDITOR_NAME: &str = "HECTO";
 const EDITOR_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[derive(Clone, Copy, Default, Debug)]
-struct SearchInfo {
-    prev_location: Location
-}
 
-#[derive(Clone, Copy, Default, Debug)]
-pub struct Location {
-    pub grapheme_index: usize,
-    pub line_index: usize,
-}
 
 pub struct View {
     buffer: Buffer,
@@ -36,7 +27,7 @@ pub struct View {
     size: TerminalSize,
     text_location: Location,
     scroll_offset: CaretPosition,
-    search_info: Option<SearchInfo>
+    search_info: Option<SearchInfo>,
 }
 
 impl View {
@@ -56,7 +47,7 @@ impl View {
             size: margined_size,
             text_location: Location::default(),
             scroll_offset: CaretPosition::default(),
-            search_info: Some(SearchInfo::default())
+            search_info: Some(SearchInfo::default()),
         }
     }
 
@@ -187,7 +178,7 @@ impl View {
         let old_len = self
             .buffer
             .data
-            .get(self.text_location.line_index)
+            .get(self.text_location.line_idx)
             .map_or(0, Line::grapheme_count);
 
         self.buffer.add_character_at(chr, self.text_location);
@@ -195,7 +186,7 @@ impl View {
         let new_len = self
             .buffer
             .data
-            .get(self.text_location.line_index)
+            .get(self.text_location.line_idx)
             .map_or(0, Line::grapheme_count);
 
         let delta = new_len.saturating_sub(old_len);
@@ -208,7 +199,7 @@ impl View {
 
     fn backspace(&mut self) {
         // Top left does nothing
-        if self.text_location.line_index == 0 && self.text_location.grapheme_index == 0 {
+        if self.text_location.line_idx == 0 && self.text_location.grapheme_idx == 0 {
             return;
         }
         self.move_text_location(Move::Left);
@@ -235,20 +226,46 @@ impl View {
         self.buffer.save()
     }
 
-    pub fn search(&mut self, search_string: String) {
+    // ======================================= SEARCH =================================================================
 
+    pub fn search_next(&mut self, search_string: &str) {
+        if let Some(location) = self.next_valid_location() {
+            self.query(search_string, location);
+        }
+    }
+
+    pub fn search(&mut self, search_string: &str) {
+        self.query(search_string, self.text_location);
+    }
+
+    fn query(&mut self, search_string: &str, start_location: Location) {
         if search_string.is_empty() {
             return;
         }
-
-        if let Some(found) =  self.buffer.find(&search_string) {
+        if let Some(found) = self.buffer.forward_find(search_string, start_location) {
             self.text_location = found;
             self.scroll_text_location_into_view();
+            self.center_text_location();
         }
     }
 
     pub fn enter_search(&mut self) {
-        self.search_info = Some(SearchInfo{prev_location: self.text_location});
+        self.search_info = Some(SearchInfo {
+            prev_location: self.text_location,
+        });
+    }
+    
+    fn center_text_location(&mut self) {
+        let TerminalSize { columns, rows } = self.size;
+        let CaretPosition { column, row } = self.text_location_to_position();
+        
+        let vertical_middle = rows.div_ceil(2);
+        let horizontal_middle = columns.div_ceil(2);
+        
+        self.scroll_offset.row  = row.saturating_sub(vertical_middle);
+        self.scroll_offset.column = column.saturating_sub(horizontal_middle);
+        
+        self.needs_redraw = true;
     }
 
     pub fn dissmiss_search(&mut self) {
@@ -309,21 +326,50 @@ impl View {
 
     // =========================================== HELPERS =====================================================
 
+    fn next_valid_location(&self) -> Option<Location> {
+        let line_len = self.buffer.get_line_length(self.text_location.line_idx)?;
+        
+        let Location {
+            grapheme_idx,
+            line_idx,
+        } = self.text_location;
+
+        let res = if grapheme_idx.saturating_add(1) > line_len
+            && line_idx >= self.buffer.get_number_of_lines()
+        {
+            Location {
+                line_idx: 0,
+                grapheme_idx: 0,
+            }
+        } else if grapheme_idx.saturating_add(1) > line_len {
+            Location {
+                line_idx: line_idx.saturating_add(1),
+                grapheme_idx: 0,
+            }
+        } else {
+            Location {
+                line_idx,
+                grapheme_idx: grapheme_idx.saturating_add(1),
+            }
+        };
+        Some(res)
+    }
+
     // =========================================== SNAPING =====================================================
 
     fn snap_to_valid_grapheme(&mut self) {
-        self.text_location.grapheme_index = self
+        self.text_location.grapheme_idx = self
             .buffer
             .data
-            .get(self.text_location.line_index)
+            .get(self.text_location.line_idx)
             .map_or(0, |line| {
-                cmp::min(line.grapheme_count(), self.text_location.grapheme_index)
+                cmp::min(line.grapheme_count(), self.text_location.grapheme_idx)
             });
     }
 
     fn snap_to_valid_line(&mut self) {
-        self.text_location.line_index = cmp::min(
-            self.text_location.line_index,
+        self.text_location.line_idx = cmp::min(
+            self.text_location.line_idx,
             self.buffer.get_number_of_lines(),
         );
     }
@@ -331,20 +377,20 @@ impl View {
     // ======================================== CARET MOVEMENT ===================================================
 
     fn move_up(&mut self, step: usize) {
-        self.text_location.line_index = self.text_location.line_index.saturating_sub(step);
+        self.text_location.line_idx = self.text_location.line_idx.saturating_sub(step);
         self.snap_to_valid_grapheme();
     }
 
     fn move_down(&mut self, step: usize) {
-        self.text_location.line_index = self.text_location.line_index.saturating_add(step);
+        self.text_location.line_idx = self.text_location.line_idx.saturating_add(step);
         self.snap_to_valid_grapheme();
         self.snap_to_valid_line();
     }
 
     fn move_left(&mut self) {
-        if self.text_location.grapheme_index > 0 {
-            self.text_location.grapheme_index -= 1;
-        } else if self.text_location.line_index > 0 {
+        if self.text_location.grapheme_idx > 0 {
+            self.text_location.grapheme_idx -= 1;
+        } else if self.text_location.line_idx > 0 {
             self.move_up(1);
             self.move_to_end_line();
         }
@@ -354,11 +400,11 @@ impl View {
         let line_width = self
             .buffer
             .data
-            .get(self.text_location.line_index)
+            .get(self.text_location.line_idx)
             .map_or(0, Line::grapheme_count);
 
-        if self.text_location.grapheme_index < line_width {
-            self.text_location.grapheme_index += 1;
+        if self.text_location.grapheme_idx < line_width {
+            self.text_location.grapheme_idx += 1;
         } else {
             self.move_to_start_line();
             self.move_down(1);
@@ -366,23 +412,23 @@ impl View {
     }
 
     fn move_to_start_line(&mut self) {
-        self.text_location.grapheme_index = 0;
+        self.text_location.grapheme_idx = 0;
     }
 
     fn move_to_end_line(&mut self) {
-        self.text_location.grapheme_index = self
+        self.text_location.grapheme_idx = self
             .buffer
             .data
-            .get(self.text_location.line_index)
+            .get(self.text_location.line_idx)
             .map_or(0, Line::grapheme_count);
     }
 
     // ===================================== Additional Helpers ===================================================
 
     fn text_location_to_position(&self) -> CaretPosition {
-        let row = self.text_location.line_index;
+        let row = self.text_location.line_idx;
         let col = self.buffer.data.get(row).map_or(0, |line| {
-            line.width_until(self.text_location.grapheme_index)
+            line.width_until(self.text_location.grapheme_idx)
         });
         CaretPosition { column: col, row }
     }

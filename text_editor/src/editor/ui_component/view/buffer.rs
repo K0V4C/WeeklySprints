@@ -1,7 +1,9 @@
 use std::fs::OpenOptions;
 use std::io::Write;
 
-use super::{Location, line::Line};
+use crate::editor::line::Line;
+
+use super::Location;
 
 #[derive(Default)]
 pub struct Buffer {
@@ -28,17 +30,63 @@ impl Buffer {
 
     // =========================================================== Search ===============================================================
 
-    pub fn find(&self, search_string: &str) -> Option<Location> {
+    pub fn forward_find(
+        &self,
+        search_string: &str,
+        current_location: Location,
+    ) -> Option<Location> {
+        let current_line = self.data.get(current_location.line_idx);
 
-        for (line_idx, line) in self.data.iter().enumerate() {
-           if let Some(graph_idx) = line.find(search_string) {
-               return Some(Location{
-                   line_index: line_idx,
-                   grapheme_index: graph_idx
-               });
-           }
+        let lines_after = self
+            .data
+            .iter()
+            .enumerate()
+            .filter(|(idx, _)| *idx > current_location.line_idx);
+        
+        let lines_before = self
+            .data
+            .iter()
+            .enumerate()
+            .filter(|(idx, _)| *idx <= current_location.line_idx);
+        
+        // Try to find on current line
+        if let Some(line) = current_line {
+            if let Some(graph_idx) =
+                line.forward_find(search_string, current_location.grapheme_idx)
+            {
+                return Some(Location {
+                    line_idx: current_location.line_idx,
+                    grapheme_idx: graph_idx,
+                });
+            }
         }
 
+        // Try to look forward
+        if let Some(found) = Self::search_forward(search_string, lines_after) {
+            return Some(found);
+        }
+
+        // Loop around and search
+        if let Some(found) = Self::search_forward(search_string, lines_before) {
+            return Some(found);
+        }
+
+        None
+    }
+
+    fn search_forward<'a, I>(search_string: &'a str, line_pile: I) -> Option<Location>
+    where
+        I: Iterator<Item = (usize, &'a Line)>,
+    {
+        // Try to look forward
+        for (line_idx, line) in line_pile {
+            if let Some(graph_idx) = line.forward_find(search_string, 0) {
+                return Some(Location {
+                    line_idx,
+                    grapheme_idx: graph_idx,
+                });
+            }
+        }
         None
     }
 
@@ -60,67 +108,72 @@ impl Buffer {
         self.data.len()
     }
 
+    pub fn get_line_length(&self, line_idx: usize) -> Option<usize> {
+        self.data
+            .get(line_idx).map(Line::grapheme_count)
+    }
+
     // ====================================================== Buffer Edditing ===================================================
 
     pub fn add_character_at(&mut self, chr: char, location: Location) {
-        if location.line_index > self.data.len() {
+        if location.line_idx > self.data.len() {
             return;
         }
 
         // TODO: maybe should fix this and move this piece of code inside Some block
-        if location.line_index == self.data.len() {
+        if location.line_idx == self.data.len() {
             self.data.push(Line::from(""));
         }
 
-        if let Some(selected_line) = self.data.get_mut(location.line_index) {
-            selected_line.add_character_to_line(chr, location.grapheme_index);
+        if let Some(selected_line) = self.data.get_mut(location.line_idx) {
+            selected_line.add_character_to_line(chr, location.grapheme_idx);
             self.is_modified = true;
         };
     }
 
     pub fn delete_character_at(&mut self, location: Location) {
         // Safeguard, should not happen
-        if location.line_index > self.data.len() {
+        if location.line_idx > self.data.len() {
             return;
         }
 
         // Backspace already transalted into delete so it only one case now
         // Delete when caret is at the end of the line
 
-        if self.data.get_mut(location.line_index).is_none() {
+        if self.data.get_mut(location.line_idx).is_none() {
             return;
         }
 
         let number_of_lines = self.get_number_of_lines();
-        let selected_line = self.data.get_mut(location.line_index).unwrap();
+        let selected_line = self.data.get_mut(location.line_idx).unwrap();
         let line_length = selected_line.grapheme_count();
 
         // Deletion at non specific point
-        if location.grapheme_index != line_length {
-            selected_line.delete_character(location.grapheme_index);
+        if location.grapheme_idx != line_length {
+            selected_line.delete_character(location.grapheme_idx);
             self.is_modified = true;
-        } else if location.grapheme_index == line_length
-            && location.line_index.saturating_add(1) < number_of_lines
+        } else if location.grapheme_idx == line_length
+            && location.line_idx.saturating_add(1) < number_of_lines
         {
             // Deletion at the end of the line
-            let next_line = self.data.remove(location.line_index.saturating_add(1));
+            let next_line = self.data.remove(location.line_idx.saturating_add(1));
             // This is the same code for `selected_line` had to be written this way so the reference from before would be dropped
-            let selected_line = self.data.get_mut(location.line_index).unwrap();
+            let selected_line = self.data.get_mut(location.line_idx).unwrap();
             selected_line.concat(&next_line);
             self.is_modified = true;
         }
     }
 
     pub fn insert_newline(&mut self, location: Location) {
-        if location.line_index == self.get_number_of_lines() {
+        if location.line_idx == self.get_number_of_lines() {
             self.data.push(Line::default());
             return;
         }
 
-        if let Some(working_line) = self.data.get_mut(location.line_index) {
-            let cut_off = working_line.split_off(location.grapheme_index);
+        if let Some(working_line) = self.data.get_mut(location.line_idx) {
+            let cut_off = working_line.split_off(location.grapheme_idx);
             self.data
-                .insert(location.line_index.saturating_add(1), cut_off);
+                .insert(location.line_idx.saturating_add(1), cut_off);
         }
 
         self.is_modified = true;

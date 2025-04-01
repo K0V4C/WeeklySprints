@@ -11,28 +11,15 @@ use crossterm::{
     },
 };
 
+use super::caret_position::CaretPosition;
+
 #[derive(Copy, Clone, Default, Debug)]
 pub struct TerminalSize {
     pub columns: usize,
     pub rows: usize,
 }
 
-#[derive(Copy, Clone, Default)]
-pub struct CaretPosition {
-    pub column: usize,
-    pub row: usize,
-}
-
-impl CaretPosition {
-    pub const fn saturating_sub(self, other: Self) -> Self {
-        Self {
-            column: self.column.saturating_sub(other.column),
-            row: self.row.saturating_sub(other.row),
-        }
-    }
-}
-
-pub struct Terminal {}
+pub struct Terminal;
 
 impl Terminal {
     pub fn init() -> Result<(), std::io::Error> {

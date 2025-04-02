@@ -1,4 +1,3 @@
-
 ## Text Editor (name work in progress)
 
 As menitioned in the credits this is a project follwing a blog post from flenker on how to make Vim-like text editor from scratch using Rust.

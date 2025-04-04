@@ -1,6 +1,7 @@
 use crate::editor::{
     document_status::DocumentStatus,
-    terminal::{Terminal, TerminalSize},
+    terminal::Terminal,
+    size::Size
 };
 
 use super::UiComponent;
@@ -9,7 +10,7 @@ use super::UiComponent;
 pub struct StatusBar {
     status: DocumentStatus,
     needs_redraw: bool,
-    size: TerminalSize,
+    size: Size,
 }
 
 /// It is assumed for this component to be of size 1 vertically
@@ -73,7 +74,7 @@ impl UiComponent for StatusBar {
     }
 
     /// Set the size of the component
-    fn set_size(&mut self, new_size: TerminalSize) {
+    fn set_size(&mut self, new_size: Size) {
         self.size = new_size;
     }
 

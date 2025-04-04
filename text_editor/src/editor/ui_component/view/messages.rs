@@ -1,11 +1,11 @@
-use crate::editor::terminal::TerminalSize;
+use crate::editor::size::Size;
 
 use super::buffer::Buffer;
 
 pub struct Message;
 
 impl Message {
-    pub fn build_welcome_message(size: TerminalSize, name: &str, version: &str) -> Buffer {
+    pub fn build_welcome_message(size: Size, name: &str, version: &str) -> Buffer {
         let mut buffer = Buffer::default();
 
         let length_of_terminal = size.columns;

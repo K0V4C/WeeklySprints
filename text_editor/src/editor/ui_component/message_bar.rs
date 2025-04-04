@@ -1,6 +1,7 @@
 use std::time::{Duration, Instant};
 
-use crate::editor::terminal::{Terminal, TerminalSize};
+use crate::editor::terminal::Terminal;
+use crate::editor::size::Size;
 
 use super::UiComponent;
 
@@ -8,7 +9,7 @@ pub const FIVE_SECONDS: Duration = Duration::new(5, 0);
 
 pub struct MessageBar {
     needs_redraw: bool,
-    size: TerminalSize,
+    size: Size,
     message_string: String,
     last_render: Instant,
 }
@@ -71,7 +72,7 @@ impl UiComponent for MessageBar {
     }
 
     /// Set the size of the component
-    fn set_size(&mut self, new_size: TerminalSize) {
+    fn set_size(&mut self, new_size: Size) {
         self.size = new_size;
     }
 

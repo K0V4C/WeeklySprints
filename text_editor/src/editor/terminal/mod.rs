@@ -11,13 +11,7 @@ use crossterm::{
     },
 };
 
-use super::caret_position::CaretPosition;
-
-#[derive(Copy, Clone, Default, Debug)]
-pub struct TerminalSize {
-    pub columns: usize,
-    pub rows: usize,
-}
+use super::{caret_position::CaretPosition, size::Size};
 
 pub struct Terminal;
 
@@ -76,10 +70,10 @@ impl Terminal {
         Ok(())
     }
 
-    pub fn size() -> Result<TerminalSize, std::io::Error> {
+    pub fn size() -> Result<Size, std::io::Error> {
         let size = crossterm::terminal::size()?;
 
-        Ok(TerminalSize {
+        Ok(Size {
             columns: size.0 as usize,
             rows: size.1 as usize,
         })

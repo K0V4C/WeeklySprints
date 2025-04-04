@@ -1,14 +1,15 @@
 use crate::editor::{
-    command::Edit,
+    command::edit::Edit,
     line::Line,
-    terminal::{Terminal, TerminalSize},
+    terminal::Terminal,
+    size::Size
 };
 
 use super::UiComponent;
 
 pub struct CommandBar {
     needs_redraw: bool,
-    size: TerminalSize,
+    size: Size,
     command_line: Line,
     prompt: String,
 }
@@ -86,7 +87,7 @@ impl UiComponent for CommandBar {
     }
 
     /// Set the size of the component
-    fn set_size(&mut self, new_size: TerminalSize) {
+    fn set_size(&mut self, new_size: Size) {
         self.size = new_size;
     }
 

@@ -1,3 +1,4 @@
+
 mod buffer;
 mod location;
 mod messages;
@@ -12,10 +13,11 @@ use search_info::SearchInfo;
 
 use crate::editor::{
     caret_position::CaretPosition,
-    command::{Edit, Move},
+    command::{edit::Edit, movement::Move},
     document_status::DocumentStatus,
     line::Line,
-    terminal::{Terminal, TerminalSize},
+    terminal::Terminal,
+    size::Size
 };
 
 use super::UiComponent;
@@ -26,7 +28,7 @@ const EDITOR_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub struct View {
     buffer: Buffer,
     needs_redraw: bool,
-    size: TerminalSize,
+    size: Size,
     text_location: Location,
     scroll_offset: CaretPosition,
     search_info: Option<SearchInfo>,
@@ -38,7 +40,7 @@ impl View {
     pub fn new(vertical_margin: usize) -> Self {
         let terminal_size = Terminal::size().unwrap_or_default();
 
-        let margined_size = TerminalSize {
+        let margined_size = Size {
             rows: terminal_size.rows.saturating_sub(vertical_margin),
             columns: terminal_size.columns,
         };
@@ -89,7 +91,7 @@ impl View {
             .saturating_sub(self.scroll_offset)
     }
 
-    pub fn resize(&mut self, new_size: TerminalSize) {
+    pub fn resize(&mut self, new_size: Size) {
         self.size = new_size;
         self.scroll_text_location_into_view();
         self.mark_redraw(true);
@@ -160,7 +162,7 @@ impl View {
     // ========================================= COMMAND HANDLING ==============================================
 
     fn move_text_location(&mut self, direction: Move) {
-        let TerminalSize { rows, .. } = self.size;
+        let Size { rows, .. } = self.size;
 
         match direction {
             Move::Up => self.move_up(1),
@@ -286,7 +288,7 @@ impl View {
     }
 
     fn center_text_location(&mut self) {
-        let TerminalSize { columns, rows } = self.size;
+        let Size { columns, rows } = self.size;
         let CaretPosition { column, row } = self.text_location_to_position();
 
         let vertical_middle = rows.div_ceil(2);
@@ -319,7 +321,7 @@ impl View {
     }
 
     fn scroll_horizontal(&mut self, to: usize) {
-        let TerminalSize { columns, .. } = self.size;
+        let Size { columns, .. } = self.size;
 
         let offset_changed = if to < self.scroll_offset.column {
             self.scroll_offset.column = to;
@@ -337,7 +339,7 @@ impl View {
     }
 
     fn scroll_vertical(&mut self, to: usize) {
-        let TerminalSize { rows, .. } = self.size;
+        let Size { rows, .. } = self.size;
 
         let offset_changed = if to < self.scroll_offset.row {
             self.scroll_offset.row = to;
@@ -449,7 +451,7 @@ impl UiComponent for View {
     }
 
     /// Set the size of the component
-    fn set_size(&mut self, new_size: TerminalSize) {
+    fn set_size(&mut self, new_size: Size) {
         self.size = new_size;
     }
 

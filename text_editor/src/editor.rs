@@ -1,15 +1,17 @@
 use crate::editor::ui_component::UiComponent;
 
 mod caret_position;
-mod command;
+pub mod command;
 mod document_status;
 mod line;
 mod terminal;
 mod ui_component;
+pub mod size;
 
-use crate::editor::Command::{Edit, Move, System};
-use crate::editor::command::System::{Abort, Quit, Resize, Save, Search};
+use crate::editor::command::system::System::{Abort, Quit, Resize, Save, Search};
 use caret_position::CaretPosition;
+use command::edit::Edit;
+use command::movement::Move;
 use command::Command;
 use crossterm::event::Event;
 use std::io::Error;
@@ -22,7 +24,8 @@ use ui_component::{
 
 use crossterm::event::read;
 
-use terminal::{Terminal, TerminalSize};
+use terminal::Terminal;
+use size::Size;
 
 const QUIT_COUNTER_START: usize = 3;
 
@@ -140,30 +143,30 @@ impl Editor {
 
     fn handle_editing_command(&mut self, command: Command) {
         match command {
-            System(Quit) => self.quit_try(),
-            System(Resize(size)) => self.resize(size),
+            Command::System(Quit) => self.quit_try(),
+            Command::System(Resize(size)) => self.resize(size),
 
             _ => self.reset_quit_counter(),
         }
 
         match command {
-            System(Quit | Resize(_) | Abort) => (),
-            System(Search) => self.handle_search(),
-            System(Save) => self.handle_save(),
-            Move(move_command) => self.view.handle_move_command(move_command),
-            Edit(edit_command) => self.view.handle_edit_command(edit_command),
+            Command::System(Quit | Resize(_) | Abort) => (),
+            Command::System(Search) => self.handle_search(),
+            Command::System(Save) => self.handle_save(),
+            Command::Move(move_command) => self.view.handle_move_command(move_command),
+            Command::Edit(edit_command) => self.view.handle_edit_command(edit_command),
         }
     }
 
     fn handle_save_command(&mut self, command: Command) {
         match command {
-            System(Resize(size)) => self.resize(size),
-            System(Abort) => self.exit_mode(),
-            Edit(edit_command) => self.command_bar.handle_edit_command(edit_command),
+            Command::System(Resize(size)) => self.resize(size),
+            Command::System(Abort) => self.exit_mode(),
+            Command::Edit(edit_command) => self.command_bar.handle_edit_command(edit_command),
             _ => (),
         }
 
-        if let Command::Edit(command::Edit::Enter) = command {
+        if let Command::Edit(Edit::Enter) = command {
             self.view
                 .set_buffer_file(&self.command_bar.get_command_line());
             self.exit_mode();
@@ -173,26 +176,26 @@ impl Editor {
 
     fn handle_search_command(&mut self, command: Command) {
         match command {
-            System(Resize(size)) => self.resize(size),
-            System(Abort) => self.dismiss_search(),
-            Edit(command::Edit::Enter) => self.exit_search(),
-            Edit(edit_command) => self.handle_edit_search(edit_command),
-            Move(move_command) => self.handle_move_search(move_command),
-            System(_) => (),
+            Command::System(Resize(size)) => self.resize(size),
+            Command::System(Abort) => self.dismiss_search(),
+            Command::Edit(command::edit::Edit::Enter) => self.exit_search(),
+            Command::Edit(edit_command) => self.handle_edit_search(edit_command),
+            Command::Move(move_command) => self.handle_move_search(move_command),
+            Command::System(_) => (),
         }
     }
 
-    fn handle_move_search(&mut self, move_command: command::Move) {
+    fn handle_move_search(&mut self, move_command: Move) {
         let search_string = self.command_bar.get_line();
 
         match move_command {
-            command::Move::Right | command::Move::Down => self.view.search_next(&search_string),
-            command::Move::Left | command::Move::Up => self.view.search_previous(&search_string),
+            Move::Right | Move::Down => self.view.search_next(&search_string),
+            Move::Left | Move::Up => self.view.search_previous(&search_string),
             _ => (),
         }
     }
 
-    fn handle_edit_search(&mut self, edit_command: command::Edit) {
+    fn handle_edit_search(&mut self, edit_command: Edit) {
         self.command_bar.handle_edit_command(edit_command);
         let search_string = self.command_bar.get_line();
         self.view.search(&search_string);
@@ -273,24 +276,24 @@ impl Editor {
         }
     }
 
-    fn resize(&mut self, new_terminal_size: TerminalSize) {
-        self.message_bar.resize(TerminalSize {
+    fn resize(&mut self, new_terminal_size: Size) {
+        self.message_bar.resize(Size {
             columns: new_terminal_size.columns,
             rows: 1,
         });
 
-        self.command_bar.resize(TerminalSize {
+        self.command_bar.resize(Size {
             columns: new_terminal_size.columns,
             rows: 1,
         });
 
-        self.status_bar.resize(TerminalSize {
+        self.status_bar.resize(Size {
             columns: new_terminal_size.columns,
             rows: 1,
         });
 
         let new_height = new_terminal_size.rows.saturating_sub(2);
-        self.view.resize(TerminalSize {
+        self.view.resize(Size {
             columns: new_terminal_size.columns,
             rows: new_height,
         });

@@ -1,9 +1,10 @@
+
 pub mod command_bar;
 pub mod message_bar;
 pub mod status_bar;
 pub mod view;
 
-use super::terminal::TerminalSize;
+use crate::editor::size::Size;
 
 pub trait UiComponent {
     /// Marks if ui component need to be redrawn
@@ -13,13 +14,13 @@ pub trait UiComponent {
     fn needs_redraw(&self) -> bool;
 
     /// Resize component
-    fn resize(&mut self, new_size: TerminalSize) {
+    fn resize(&mut self, new_size: Size) {
         self.set_size(new_size);
         self.mark_redraw(true);
     }
 
     /// Set the size of the component
-    fn set_size(&mut self, new_size: TerminalSize);
+    fn set_size(&mut self, new_size: Size);
 
     /// Draw this component if it's visible and in need of redrawing
     fn render(&mut self, origin_y: usize) {

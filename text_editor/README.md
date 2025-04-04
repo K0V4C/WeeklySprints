@@ -28,18 +28,19 @@ In the end final projects will be similar but I am more lazy and quality of this
 9. Simple Search
 10. Advanced Search with movement
 10. Even more advanced search
+12. Fixed front and back search
 
 #### Bugs: 
 - *EMOJIS DONT WORK AND THEY HAVE TO GET FIXED*
-- ghost image of auto resizing before applying propper view
+- ghost image of auto resizing before applying propper view (this should be realated to line wrap)
 - random crash when resizing
-- pressing RIGHT goes twice FIXED
+- pressing RIGHT goes twice *FIXED*
 - emoji scrolling still doesnt work as it should
 - terminal smaller then 3 rows just breaks 
 - weird bug when going full screen, somehow related to cluster emojies
-- Rendering order 
-- For some reason backward search doesnt work with method and works without it
-- Have to fix foward search
+- Rendering order *FIXED*
+- For some reason backward search doesnt work with method and works without it *FIXED*
+- Have to fix foward search *FIXED*
 
 #### Improve:
 - No need to redraw as many times as I do

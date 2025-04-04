@@ -255,7 +255,10 @@ impl View {
         if search_string.is_empty() {
             return;
         }
-        if let Some(found) = self.buffer.forward_find(search_string, start_location) {
+        
+        let result =  self.buffer.forward_find(search_string, start_location);
+        
+        if let Some(found) =  result {
             self.text_location = found;
             self.scroll_text_location_into_view();
             self.center_text_location();
@@ -266,7 +269,10 @@ impl View {
         if search_string.is_empty() {
             return;
         }
-        if let Some(found) = self.buffer.backward_find(search_string, start_location) {
+
+        let result =  self.buffer.backward_find(search_string, start_location);
+
+        if let Some(found) = result {
             self.text_location = found;
             self.scroll_text_location_into_view();
             self.center_text_location();

@@ -83,10 +83,9 @@ impl Buffer {
             .map_or(Line::from(search_string).grapheme_count(), |x| {
                 x.get_next_match_idx(loc.grapheme_idx, search_string)
             });
-        let offset = std::cmp::min(1, value);
 
         Location {
-            grapheme_idx: loc.grapheme_idx.saturating_add(offset),
+            grapheme_idx: loc.grapheme_idx.saturating_add(value),
             line_idx: loc.line_idx,
         }
     }

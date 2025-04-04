@@ -70,7 +70,7 @@ impl Line {
             .get(grapheme_idx)
             .map_or(0, |fragment| fragment.start_byte_idx)
     }
-    
+
     fn byte_idx_to_grapheme_idx(&self, byte_idx: ByteIdx) -> GraphemeIdx {
         self.fragments
             .iter()
@@ -83,12 +83,12 @@ impl Line {
         search_string: &str,
         end_point: GraphemeIdx,
     ) -> Option<GraphemeIdx> {
-        if end_point > self.string.len() {
+        if end_point >= self.string.len() {
             return None;
         }
-
+         
         // TODO: need to fix this
-        let slice = &self.string[..self.grapheme_idx_to_byte_idx(end_point)];
+        let slice = &self.string[..=self.grapheme_idx_to_byte_idx(end_point)];
 
         slice
             .rmatch_indices(search_string)
@@ -104,7 +104,9 @@ impl Line {
         if start_look_point >= self.string.len() {
             return None;
         }
-
+        
+        
+        
         let slice = &self.string[self.grapheme_idx_to_byte_idx(start_look_point)..];
 
         slice
@@ -114,17 +116,25 @@ impl Line {
                 self.byte_idx_to_grapheme_idx(byte_idx.saturating_add(start_look_point))
             })
     }
-    
-    // TODO: need to fix this 
+
     pub fn get_next_match_idx(&self, start_idx: GraphemeIdx, search_string: &str) -> GraphemeIdx {
-        if start_idx >= self.string.len() {
+        
+        if start_idx >= self.grapheme_count() {
             return 1;
         }
-
-        let slice = &self.string[self.grapheme_idx_to_byte_idx(start_idx)..];
+        
+        let grapheme_len = Line::from(search_string).grapheme_count();
+        
+        if (start_idx + grapheme_len) >= self.grapheme_count() {
+            return self.grapheme_count();
+        } 
+        
+        if start_idx + grapheme_len >= self.string.len() {}
+        
+        let slice = &self.string[self.grapheme_idx_to_byte_idx(start_idx.saturating_add(grapheme_len))..];
 
         slice.match_indices(search_string).next().map_or(1, |x| {
-            self.byte_idx_to_grapheme_idx(x.0.saturating_add(start_idx))
+            self.byte_idx_to_grapheme_idx(x.0.saturating_add(grapheme_len))
         })
     }
     // ========================================================== String manipulation ==================================================

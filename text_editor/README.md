@@ -42,12 +42,14 @@ In the end final projects will be similar but I am more lazy and quality of this
 - Rendering order *FIXED*
 - For some reason backward search doesnt work with method and works without it *FIXED*
 - Have to fix foward search *FIXED*
+- Scroll broken 
 
 #### Improve:
 - No need to redraw as many times as I do
 - Make search work with graphemes
 - Make AnnotatedString work with graphemes
 - Tweak collors
+- Figure out why I have to highlight whole file and not only 0..end_of_view
 
 ### Credits
 

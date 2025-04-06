@@ -1,4 +1,5 @@
 mod buffer;
+mod highlighter;
 pub mod location;
 mod messages;
 pub mod search_info;
@@ -6,6 +7,7 @@ pub mod search_info;
 use std::cmp;
 
 use buffer::Buffer;
+use highlighter::Highlighter;
 use location::Location;
 use messages::Message;
 use search_info::SearchInfo;
@@ -116,26 +118,44 @@ impl View {
         Ok(())
     }
 
-    fn draw_buffer(&self) -> Result<(), std::io::Error> {
+    fn draw_buffer(&self, origin_y: usize) -> Result<(), std::io::Error> {
         let (width, height) = (self.size.columns, self.size.rows);
 
         if width == 0 || height == 0 {
             return Ok(());
         }
-
+        
+        let end_y = origin_y.saturating_add(height);
         let top = self.scroll_offset.row;
 
-        for current_row in 0..height {
-            if let Some(current_line) = self.buffer.get_line(current_row.saturating_add(top)) {
-                
-                let left = self.scroll_offset.column;
-                let right = self.scroll_offset.column.saturating_add(width);
+        let selected_match = self.search_info.is_some().then_some(self.text_location);
+        let query = self
+            .search_info
+            .as_ref()
+            .map(|x| x.search_query.to_string());
 
-                let mut annotated_string = current_line
-                    .into_annotated_string(self.search_info.as_ref(), self.text_location);
-                
-                annotated_string.crop(left..right);
-                
+        let mut highlighter = Highlighter::new(query, selected_match);
+
+        // It has to be 0 here because of comment blocks
+        for current_row in 0..self.buffer.get_number_of_lines() {
+            if let Some(line) = self.buffer.get_line(current_row) {
+                highlighter.highlight(current_row, line);
+            }
+        }
+        
+        
+        // This here can start from origin no problems
+        for current_row in origin_y..end_y {
+            
+            
+            let line_idx = current_row.saturating_add(top).saturating_sub(origin_y);
+            let left = self.scroll_offset.column;
+            let right = self.scroll_offset.column.saturating_add(width);
+            
+            if let Some(annotated_string) =
+                self.buffer
+                    .get_highlighted_line(line_idx, left..right, &highlighter)
+            {
                 Terminal::print_annoted_line(current_row, annotated_string)?;
             }
         }
@@ -468,9 +488,9 @@ impl UiComponent for View {
     }
 
     /// Method to actually draw the component, must be implemented by each component
-    fn draw(&mut self, _: usize) -> Result<(), std::io::Error> {
+    fn draw(&mut self, origin_y: usize) -> Result<(), std::io::Error> {
         self.draw_rows()?;
-        self.draw_buffer()?;
+        self.draw_buffer(origin_y)?;
         self.draw_welcome_message()?;
         Ok(())
     }

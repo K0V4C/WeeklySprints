@@ -1,9 +1,12 @@
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::ops::Range;
 
+use crate::editor::annotated_string::AnnotatedString;
 use crate::editor::line::Line;
 
 use super::Location;
+use super::highlighter::Highlighter;
 
 #[derive(Default)]
 pub struct Buffer {
@@ -167,6 +170,31 @@ impl Buffer {
         None
     }
     // ============================================================= Getters ==========================================================
+
+    pub fn get_highlighted_line(
+        &self,
+        row: usize,
+        range: Range<usize>,
+        highlighter: &Highlighter,
+    ) -> Option<AnnotatedString> {
+        let annotations = if let Some(annotations) = highlighter.get_annotations(row) {
+            annotations.iter().cloned().collect()
+        } else {
+            vec![]
+        };
+
+        let line_string = match self.get_line(row) {
+            Some(s) => s.get_visable_graphemes(range),
+            None => return None,
+        };
+
+        let s = AnnotatedString {
+            string: line_string,
+            annotations,
+        };
+
+        Some(s)
+    }
 
     pub fn get_line(&self, row: usize) -> Option<&Line> {
         self.data.get(row)

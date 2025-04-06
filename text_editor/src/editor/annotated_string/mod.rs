@@ -24,7 +24,7 @@ impl AnnotatedString {
         if range.start >= range.end {
             return;
         }
-        
+
         if range.start > self.string.len() || range.end > self.string.len() {
             return;
         }
@@ -33,58 +33,69 @@ impl AnnotatedString {
         let cropped_string = &self.string[range.clone()];
 
         for annotation in &self.annotations {
-
             if (range.start < annotation.start_byte && range.end < annotation.start_byte)
-            || (range.end > annotation.start_byte && range.end > annotation.end_byte) {
+                || (range.end > annotation.start_byte && range.end > annotation.end_byte)
+            {
                 continue;
             }
 
             // RS AS RE AE
 
             if range.start < annotation.start_byte
-            && range.start < annotation.end_byte
-            && range.end > annotation.start_byte
-            && range.end < annotation.end_byte {
-                new_annotations.push(
-                    Annotation { start_byte: annotation.start_byte, end_byte: range.end, annotation_type: annotation.annotation_type }
-                );
+                && range.start < annotation.end_byte
+                && range.end > annotation.start_byte
+                && range.end < annotation.end_byte
+            {
+                new_annotations.push(Annotation {
+                    start_byte: annotation.start_byte,
+                    end_byte: range.end,
+                    annotation_type: annotation.annotation_type,
+                });
             }
 
             // AS RS AE RE
 
             if range.start < annotation.end_byte
-            && range.start > annotation.start_byte
-            && range.end > annotation.end_byte
-            && range.end > annotation.start_byte {
-                new_annotations.push(
-                    Annotation { start_byte: range.start, end_byte: annotation.end_byte, annotation_type: annotation.annotation_type }
-                );
+                && range.start > annotation.start_byte
+                && range.end > annotation.end_byte
+                && range.end > annotation.start_byte
+            {
+                new_annotations.push(Annotation {
+                    start_byte: range.start,
+                    end_byte: annotation.end_byte,
+                    annotation_type: annotation.annotation_type,
+                });
             }
 
             // AS RS RE AE
 
             if range.start > annotation.start_byte
-            && range.start < annotation.end_byte
-            && range.end < annotation.end_byte
-            && range.end > annotation.start_byte {
-                new_annotations.push(
-                    Annotation { start_byte: range.start, end_byte: range.end, annotation_type: annotation.annotation_type }
-                );
+                && range.start < annotation.end_byte
+                && range.end < annotation.end_byte
+                && range.end > annotation.start_byte
+            {
+                new_annotations.push(Annotation {
+                    start_byte: range.start,
+                    end_byte: range.end,
+                    annotation_type: annotation.annotation_type,
+                });
             }
 
             // RS AS AE RE
 
             if range.start < annotation.start_byte
-            && range.start < annotation.end_byte
-            && range.end >  annotation.end_byte
-            && range.end > annotation.start_byte {
-                new_annotations.push(
-                    Annotation { start_byte: annotation.start_byte, end_byte: annotation.end_byte, annotation_type: annotation.annotation_type }
-                );
+                && range.start < annotation.end_byte
+                && range.end > annotation.end_byte
+                && range.end > annotation.start_byte
+            {
+                new_annotations.push(Annotation {
+                    start_byte: annotation.start_byte,
+                    end_byte: annotation.end_byte,
+                    annotation_type: annotation.annotation_type,
+                });
             }
         }
-        
-        
+
         self.annotations = new_annotations;
         self.string = cropped_string.to_owned();
     }

@@ -1,7 +1,10 @@
+use std::fmt::Display;
+
 use crate::editor::line::ByteIdx;
 
 use super::annotation_type::AnnotationType;
 
+#[derive(Clone, Copy, Debug)]
 pub struct Annotation {
     pub start_byte: ByteIdx,
     pub end_byte: ByteIdx,
@@ -15,5 +18,11 @@ impl Annotation {
             end_byte,
             annotation_type,
         }
+    }
+}
+
+impl Display for Annotation{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {} \n", self.start_byte, self.end_byte)
     }
 }

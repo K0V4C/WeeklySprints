@@ -2,7 +2,8 @@ Test file:
 
 search for guska
 aaaaaaaa
-
+111231                                                                                                    1
+                                                                                                          1
 abababababa
 
 opa opa opa
@@ -12,7 +13,7 @@ sadasdsad dsadasds
 
 
 
-
+                s                         s                            s                        s          s 
 
 
 
@@ -44,12 +45,12 @@ biscuit
 
 
 
-
-
-
-
-
-
+1                                                                                                        1
+1                                                                                                        1                                                                                                   
+1                                                                                                        1
+1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
+1
+1
 
 
 

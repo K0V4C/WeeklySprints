@@ -1,12 +1,7 @@
-use std::ops::Range;
+use std::ops::{Deref, Range};
 
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
-
-use super::{
-    annotated_string::{AnnotatedString, annotation::Annotation, annotation_type::AnnotationType},
-    ui_component::view::{location::Location, search_info::SearchInfo},
-};
 
 pub type GraphemeIdx = usize;
 pub type ByteIdx = usize;
@@ -163,48 +158,20 @@ impl Line {
     }
 
     // ============================================================= Getters =====================================================
-
-    pub fn into_annotated_string(
-        &self,
-        search_info: Option<&SearchInfo>,
-        current_location: Location,
-    ) -> AnnotatedString {
-        // Vector for annottions that might be preasent
-        let mut annotations: Vec<Annotation> = Vec::new();
-
-        // Add annotations if search is given
-        if let Some(search_info) = search_info {
-            let search_info = search_info;
-            let graphemes = search_info.search_query.get_all_graphemes();
-            let all_matches: Vec<(usize, &str)> = self.string.match_indices(&graphemes).collect();
-
-            for (idx, matching_string) in all_matches {
-                let start_byte = idx;
-                let end_byte = start_byte
-                    .saturating_add(matching_string.len());
-                let annotation_type = if start_byte == current_location.grapheme_idx {
-                    AnnotationType::SelectedMatch
-                } else {
-                    AnnotationType::Match
-                };
-
-                annotations.push(Annotation {
-                    start_byte,
-                    end_byte,
-                    annotation_type,
-                });
-            }
-        }
-
-        // Return the string
-        AnnotatedString {
-            string: self.string.to_owned(),
-            annotations,
-        }
-    }
-
-    pub fn get_all_graphemes(&self) -> String {
-        self.get_visable_graphemes(0..self.grapheme_count())
+    pub fn find_all(&self, query: &str, range: Range<ByteIdx>) -> Vec<(ByteIdx, GraphemeIdx)> {
+        let end = std::cmp::min(range.end, self.string.len());
+        let start = range.start;
+        debug_assert!(start <= end);
+        debug_assert!(start <= self.string.len());
+        self.string.get(start..end).map_or_else(Vec::new, |substr| {
+            let potential_matches: Vec<ByteIdx> = substr
+                .match_indices(query) // find _potential_ matches within the substring
+                .map(|(relative_start_idx, _)| {
+                    relative_start_idx.saturating_add(start) //convert their relative indices to absolute indices
+                })
+                .collect();
+            self.match_graphme_clusters(&potential_matches, query) //convert the potential matches into matches which align with the grapheme boundaries.
+        })
     }
 
     pub fn get_visable_graphemes(&self, range: Range<GraphemeIdx>) -> String {
@@ -275,6 +242,36 @@ impl Line {
 
     // =====================================================  HELPER METHODS =========================================================
 
+    // Finds all matches which align with grapheme boundaries.
+    // Parameters:
+    // - query: The query to search for.
+    // - matches: A vector of byte indices of potential matches, which might or might not align with the grapheme clusters.
+    // Returns:
+    // A Vec of (byte_index, grapheme_idx) pairs for each match that alignes with the grapheme clusters, where byte_index is the byte index of the match, and grapheme_idx is the grapheme index of the match.
+    fn match_graphme_clusters(
+        &self,
+        matches: &[ByteIdx],
+        query: &str,
+    ) -> Vec<(ByteIdx, GraphemeIdx)> {
+        let grapheme_count = query.graphemes(true).count();
+        matches
+            .iter()
+            .filter_map(|&start| {
+                let grapheme_idx = self.byte_idx_to_grapheme_idx(start);
+                self.fragments
+                    .get(grapheme_idx..grapheme_idx.saturating_add(grapheme_count)) // get all fragments that should be part of the match
+                    .and_then(|fragments| {
+                        let substring = fragments
+                            .iter()
+                            .map(|fragment| fragment.grapheme.as_str())
+                            .collect::<String>(); //combine the fragments into a single string.
+                        (substring == query).then_some((start, grapheme_idx))
+                        // if the combined string matches the query, we have an actual match.
+                    })
+            })
+            .collect()
+    }
+
     pub fn clear(&mut self) {
         self.fragments.clear();
         self.string.clear();
@@ -311,5 +308,13 @@ impl Line {
 impl std::fmt::Display for Line {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.string)
+    }
+}
+
+impl Deref for Line {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        &self.string
     }
 }

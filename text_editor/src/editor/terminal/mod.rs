@@ -1,11 +1,16 @@
-use std::io::{stdout, Error, Write};
+use std::io::{Error, Write, stdout};
 
 mod attribute;
 
 use crossterm::{
-    cursor::{DisableBlinking, EnableBlinking, Hide, MoveTo, SavePosition, Show}, execute, queue, style::{Attribute, Print, ResetColor, SetBackgroundColor, SetForegroundColor}, terminal::{
-        disable_raw_mode, enable_raw_mode, Clear, ClearType, DisableLineWrap, EnableLineWrap, EnterAlternateScreen, LeaveAlternateScreen, SetTitle
-    }, Command
+    Command,
+    cursor::{DisableBlinking, EnableBlinking, Hide, MoveTo, SavePosition, Show},
+    execute, queue,
+    style::{Attribute, Print, ResetColor, SetBackgroundColor, SetForegroundColor},
+    terminal::{
+        Clear, ClearType, DisableLineWrap, EnableLineWrap, EnterAlternateScreen,
+        LeaveAlternateScreen, SetTitle, disable_raw_mode, enable_raw_mode,
+    },
 };
 
 use super::{annotated_string::AnnotatedString, caret_position::CaretPosition, size::Size};
@@ -89,7 +94,7 @@ impl Terminal {
             row: position.1 as usize,
         })
     }
-    
+
     pub fn disable_blinking() -> Result<(), std::io::Error> {
         Self::queue_command(DisableBlinking)?;
         Ok(())

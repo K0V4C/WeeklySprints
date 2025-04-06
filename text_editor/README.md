@@ -9,27 +9,30 @@ In the end final projects will be similar but I am more lazy and quality of this
 ### Current state: 
 
 #### Day:
-1. Caret movement + welcome message
-2. Truncate lines + resizing
-2. Better error handling
-3. scrolling
-3. complex caret movement
-4. text viewer almost done weird bug with cluster emojies
-5. adding deletion and insertion of characters (backspace and delete work)
-5. advanced deletion
-6. Enter + Tab
-6. Added Save
-6. Added Status Bar
-7. Fancy Status Bar
-7. Message Bar and small refactor for UiComponents
-7. Added expiration to messages
-8. Save as added
-8. Better String handling in Line
-9. Simple Search
-10. Advanced Search with movement
-10. Even more advanced search
-12. Fixed front and back searchCommand:
-12. Small refactor
+- 1 Caret movement + welcome message
+- 2 Truncate lines + resizing
+- 2 Better error handling
+- 3 scrolling
+- 3 complex caret movement
+- 4 text viewer almost done weird bug with cluster emojies
+- 5 adding deletion and insertion of characters (backspace and delete work)
+- 5 advanced deletion
+- 6 Enter + Tab
+- 6 Added Save
+- 6 Added Status Bar
+- 7 Fancy Status Bar
+- 7 Message Bar and small refactor for UiComponents
+- 7 Added expiration to messages
+- 8 Save as added
+- 8 Better String handling in Line
+- 9 Simple Search
+- 10 Advanced Search with movement
+- 10 Even more advanced search
+- 12 Fixed front and back searchCommand:
+- 12 Small refactor
+- 13 Added Highlihting
+- 13 Added Strategy Pattern for Highlighting
+- 13 Added different file types
 
 #### Bugs: 
 - *EMOJIS DONT WORK AND THEY HAVE TO GET FIXED*

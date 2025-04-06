@@ -4,6 +4,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 pub type GraphemeIdx = usize;
+pub type LineIdx = usize;
 pub type ByteIdx = usize;
 
 #[derive(Copy, Clone, Debug)]

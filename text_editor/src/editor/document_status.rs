@@ -1,4 +1,4 @@
-use super::caret_position::CaretPosition;
+use super::{caret_position::CaretPosition, ui_component::view::highlighter::file_type::FileType};
 
 #[derive(Default)]
 pub struct DocumentStatus {
@@ -6,6 +6,7 @@ pub struct DocumentStatus {
     pub file_name: Option<String>,
     pub number_of_lines: usize,
     pub is_modified: bool,
+    pub file_type: FileType
 }
 
 impl DocumentStatus {

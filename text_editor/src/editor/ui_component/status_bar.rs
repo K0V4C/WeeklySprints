@@ -37,7 +37,7 @@ impl StatusBar {
             .unwrap_or("[None]".to_string());
 
         let number_of_lines = self.status.line_count_to_string();
-        let position = self.status.position_indicator_to_string();
+        let position = self.status.file_type.to_string() + " | " + &self.status.position_indicator_to_string();
         let modification = self.status.modified_indicator_to_string();
 
         let line = format!("{file_name:<.50} - {number_of_lines} lines {modification}",);

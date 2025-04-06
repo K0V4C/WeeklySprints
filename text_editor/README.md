@@ -50,6 +50,8 @@ In the end final projects will be similar but I am more lazy and quality of this
 - Make AnnotatedString work with graphemes
 - Tweak collors
 - Figure out why I have to highlight whole file and not only 0..end_of_view
+- Save file in different name
+- Check if all highligting changes with file name change
 
 ### Credits
 

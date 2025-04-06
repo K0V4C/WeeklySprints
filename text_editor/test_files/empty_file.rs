@@ -1,5 +1,6 @@
 Test file:
 
+g
 search for guska
 aaaaaaaa
 111231                                                                                                    1

@@ -177,11 +177,8 @@ impl Buffer {
         range: Range<usize>,
         highlighter: &Highlighter,
     ) -> Option<AnnotatedString> {
-        let annotations = if let Some(annotations) = highlighter.get_annotations(row) {
-            annotations.iter().cloned().collect()
-        } else {
-            vec![]
-        };
+        
+        let annotations = highlighter.get_annotations(row);
 
         let line_string = match self.get_line(row) {
             Some(s) => s.get_visable_graphemes(range),

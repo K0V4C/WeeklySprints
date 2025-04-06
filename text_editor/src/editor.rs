@@ -1,18 +1,19 @@
 use crate::editor::ui_component::UiComponent;
 
+pub mod annotated_string;
 mod caret_position;
 pub mod command;
 mod document_status;
 mod line;
+pub mod size;
 mod terminal;
 mod ui_component;
-pub mod size;
 
 use crate::editor::command::system::System::{Abort, Quit, Resize, Save, Search};
 use caret_position::CaretPosition;
+use command::Command;
 use command::edit::Edit;
 use command::movement::Move;
-use command::Command;
 use crossterm::event::Event;
 use std::io::Error;
 use ui_component::command_bar::CommandBar;
@@ -24,8 +25,8 @@ use ui_component::{
 
 use crossterm::event::read;
 
-use terminal::Terminal;
 use size::Size;
+use terminal::Terminal;
 
 const QUIT_COUNTER_START: usize = 3;
 

@@ -1,8 +1,4 @@
-use crate::editor::{
-    document_status::DocumentStatus,
-    terminal::Terminal,
-    size::Size
-};
+use crate::editor::{document_status::DocumentStatus, size::Size, terminal::Terminal};
 
 use super::UiComponent;
 

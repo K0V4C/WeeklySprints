@@ -1,8 +1,7 @@
-
 mod buffer;
-mod location;
+pub mod location;
 mod messages;
-mod search_info;
+pub mod search_info;
 
 use std::cmp;
 
@@ -16,8 +15,8 @@ use crate::editor::{
     command::{edit::Edit, movement::Move},
     document_status::DocumentStatus,
     line::Line,
+    size::Size,
     terminal::Terminal,
-    size::Size
 };
 
 use super::UiComponent;
@@ -127,10 +126,17 @@ impl View {
         let top = self.scroll_offset.row;
 
         for current_row in 0..height {
-            if let Some(line) = self.buffer.data.get(current_row.saturating_add(top)) {
+            if let Some(current_line) = self.buffer.get_line(current_row.saturating_add(top)) {
+                
                 let left = self.scroll_offset.column;
                 let right = self.scroll_offset.column.saturating_add(width);
-                Terminal::print_row(current_row, &line.get_visable_graphemes(left..right))?;
+
+                let mut annotated_string = current_line
+                    .into_annotated_string(self.search_info.as_ref(), self.text_location);
+                
+                annotated_string.crop(left..right);
+                
+                Terminal::print_annoted_line(current_row, annotated_string)?;
             }
         }
         Ok(())
@@ -250,6 +256,11 @@ impl View {
     }
 
     pub fn search(&mut self, search_string: &str) {
+        // This is a place for optimisation in case of Search
+        self.search_info
+            .as_mut()
+            .map(|x| x.search_query = Line::from(search_string));
+
         self.query(search_string, self.text_location);
     }
 
@@ -257,10 +268,10 @@ impl View {
         if search_string.is_empty() {
             return;
         }
-        
-        let result =  self.buffer.forward_find(search_string, start_location);
-        
-        if let Some(found) =  result {
+
+        let result = self.buffer.forward_find(search_string, start_location);
+
+        if let Some(found) = result {
             self.text_location = found;
             self.scroll_text_location_into_view();
             self.center_text_location();
@@ -272,7 +283,7 @@ impl View {
             return;
         }
 
-        let result =  self.buffer.backward_find(search_string, start_location);
+        let result = self.buffer.backward_find(search_string, start_location);
 
         if let Some(found) = result {
             self.text_location = found;
@@ -284,6 +295,7 @@ impl View {
     pub fn enter_search(&mut self) {
         self.search_info = Some(SearchInfo {
             prev_location: self.text_location,
+            search_query: Line::from(""),
         });
     }
 
@@ -301,7 +313,7 @@ impl View {
     }
 
     pub fn dissmiss_search(&mut self) {
-        if let Some(loc) = self.search_info {
+        if let Some(loc) = self.search_info.as_ref() {
             self.text_location = loc.prev_location;
         }
 

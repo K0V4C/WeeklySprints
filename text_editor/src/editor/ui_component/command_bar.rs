@@ -1,9 +1,4 @@
-use crate::editor::{
-    command::edit::Edit,
-    line::Line,
-    terminal::Terminal,
-    size::Size
-};
+use crate::editor::{command::edit::Edit, line::Line, size::Size, terminal::Terminal};
 
 use super::UiComponent;
 

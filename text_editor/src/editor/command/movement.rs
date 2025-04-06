@@ -1,6 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-
 #[derive(Clone, Copy)]
 pub enum Move {
     Left,

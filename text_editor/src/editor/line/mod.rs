@@ -3,8 +3,13 @@ use std::ops::Range;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
-type GraphemeIdx = usize;
-type ByteIdx = usize;
+use super::{
+    annotated_string::{AnnotatedString, annotation::Annotation, annotation_type::AnnotationType},
+    ui_component::view::{location::Location, search_info::SearchInfo},
+};
+
+pub type GraphemeIdx = usize;
+pub type ByteIdx = usize;
 
 #[derive(Copy, Clone, Debug)]
 pub enum GraphemeWidth {
@@ -86,7 +91,7 @@ impl Line {
         if end_point >= self.string.len() {
             return None;
         }
-         
+
         // TODO: need to fix this
         let slice = &self.string[..=self.grapheme_idx_to_byte_idx(end_point)];
 
@@ -104,9 +109,7 @@ impl Line {
         if start_look_point >= self.string.len() {
             return None;
         }
-        
-        
-        
+
         let slice = &self.string[self.grapheme_idx_to_byte_idx(start_look_point)..];
 
         slice
@@ -118,20 +121,20 @@ impl Line {
     }
 
     pub fn get_next_match_idx(&self, start_idx: GraphemeIdx, search_string: &str) -> GraphemeIdx {
-        
         if start_idx >= self.grapheme_count() {
             return 1;
         }
-        
+
         let grapheme_len = Line::from(search_string).grapheme_count();
-        
+
         if (start_idx + grapheme_len) >= self.grapheme_count() {
             return self.grapheme_count();
-        } 
-        
+        }
+
         if start_idx + grapheme_len >= self.string.len() {}
-        
-        let slice = &self.string[self.grapheme_idx_to_byte_idx(start_idx.saturating_add(grapheme_len))..];
+
+        let slice =
+            &self.string[self.grapheme_idx_to_byte_idx(start_idx.saturating_add(grapheme_len))..];
 
         slice.match_indices(search_string).next().map_or(1, |x| {
             self.byte_idx_to_grapheme_idx(x.0.saturating_add(grapheme_len))
@@ -160,6 +163,49 @@ impl Line {
     }
 
     // ============================================================= Getters =====================================================
+
+    pub fn into_annotated_string(
+        &self,
+        search_info: Option<&SearchInfo>,
+        current_location: Location,
+    ) -> AnnotatedString {
+        // Vector for annottions that might be preasent
+        let mut annotations: Vec<Annotation> = Vec::new();
+
+        // Add annotations if search is given
+        if let Some(search_info) = search_info {
+            let search_info = search_info;
+            let graphemes = search_info.search_query.get_all_graphemes();
+            let all_matches: Vec<(usize, &str)> = self.string.match_indices(&graphemes).collect();
+
+            for (idx, matching_string) in all_matches {
+                let start_byte = idx;
+                let end_byte = start_byte
+                    .saturating_add(matching_string.len());
+                let annotation_type = if start_byte == current_location.grapheme_idx {
+                    AnnotationType::SelectedMatch
+                } else {
+                    AnnotationType::Match
+                };
+
+                annotations.push(Annotation {
+                    start_byte,
+                    end_byte,
+                    annotation_type,
+                });
+            }
+        }
+
+        // Return the string
+        AnnotatedString {
+            string: self.string.to_owned(),
+            annotations,
+        }
+    }
+
+    pub fn get_all_graphemes(&self) -> String {
+        self.get_visable_graphemes(0..self.grapheme_count())
+    }
 
     pub fn get_visable_graphemes(&self, range: Range<GraphemeIdx>) -> String {
         if range.start >= range.end {

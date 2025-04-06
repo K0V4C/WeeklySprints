@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
-use crate::editor::terminal::Terminal;
 use crate::editor::size::Size;
+use crate::editor::terminal::Terminal;
 
 use super::UiComponent;
 

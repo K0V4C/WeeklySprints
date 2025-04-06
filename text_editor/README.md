@@ -28,7 +28,8 @@ In the end final projects will be similar but I am more lazy and quality of this
 9. Simple Search
 10. Advanced Search with movement
 10. Even more advanced search
-12. Fixed front and back search
+12. Fixed front and back searchCommand:
+12. Small refactor
 
 #### Bugs: 
 - *EMOJIS DONT WORK AND THEY HAVE TO GET FIXED*
@@ -44,6 +45,9 @@ In the end final projects will be similar but I am more lazy and quality of this
 
 #### Improve:
 - No need to redraw as many times as I do
+- Make search work with graphemes
+- Make AnnotatedString work with graphemes
+- Tweak collors
 
 ### Credits
 

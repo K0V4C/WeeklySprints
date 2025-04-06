@@ -168,6 +168,10 @@ impl Buffer {
     }
     // ============================================================= Getters ==========================================================
 
+    pub fn get_line(&self, row: usize) -> Option<&Line> {
+        self.data.get(row)
+    }
+
     pub fn get_file_name(&self) -> Option<String> {
         self.file_name.clone()
     }

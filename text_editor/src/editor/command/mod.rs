@@ -1,6 +1,6 @@
-pub mod system;
 pub mod edit;
 pub mod movement;
+pub mod system;
 
 use crossterm::event::Event;
 use edit::Edit;
@@ -8,7 +8,6 @@ use movement::Move;
 use system::System;
 
 use crate::editor::size::Size;
-
 
 #[derive(Clone, Copy)]
 pub enum Command {

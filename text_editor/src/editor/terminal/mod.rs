@@ -1,17 +1,14 @@
-use std::io::{Error, Write, stdout};
+use std::io::{stdout, Error, Write};
+
+mod attribute;
 
 use crossterm::{
-    Command,
-    cursor::{Hide, MoveTo, SavePosition, Show},
-    execute, queue,
-    style::{Attribute, Print},
-    terminal::{
-        Clear, ClearType, DisableLineWrap, EnableLineWrap, EnterAlternateScreen,
-        LeaveAlternateScreen, SetTitle, disable_raw_mode, enable_raw_mode,
-    },
+    cursor::{DisableBlinking, EnableBlinking, Hide, MoveTo, SavePosition, Show}, execute, queue, style::{Attribute, Print, ResetColor, SetBackgroundColor, SetForegroundColor}, terminal::{
+        disable_raw_mode, enable_raw_mode, Clear, ClearType, DisableLineWrap, EnableLineWrap, EnterAlternateScreen, LeaveAlternateScreen, SetTitle
+    }, Command
 };
 
-use super::{caret_position::CaretPosition, size::Size};
+use super::{annotated_string::AnnotatedString, caret_position::CaretPosition, size::Size};
 
 pub struct Terminal;
 
@@ -20,6 +17,7 @@ impl Terminal {
         enable_raw_mode()?;
         Self::enter_alternate_screen()?;
         Self::disable_line_wrap()?;
+        Self::disable_blinking()?;
         Self::clear_screen()?;
         Self::draw()?;
         Ok(())
@@ -29,6 +27,7 @@ impl Terminal {
         Self::exit_alternate_screen()?;
         Self::show_caret()?;
         Self::enable_line_wrap()?;
+        Self::enable_blinking()?;
         Self::draw()?;
         disable_raw_mode()?;
         Ok(())
@@ -90,6 +89,15 @@ impl Terminal {
             row: position.1 as usize,
         })
     }
+    
+    pub fn disable_blinking() -> Result<(), std::io::Error> {
+        Self::queue_command(DisableBlinking)?;
+        Ok(())
+    }
+    pub fn enable_blinking() -> Result<(), std::io::Error> {
+        Self::queue_command(EnableBlinking)?;
+        Ok(())
+    }
 
     pub fn hide_caret() -> Result<(), std::io::Error> {
         Self::queue_command(Hide)?;
@@ -120,6 +128,39 @@ impl Terminal {
         #[allow(clippy::as_conversions, clippy::cast_possible_truncation)]
         let y = caret_positon.row as u16;
         Self::queue_command(MoveTo(x, y))?;
+        Ok(())
+    }
+
+    pub fn print_annoted_line(
+        row: usize,
+        annotated_string: AnnotatedString,
+    ) -> Result<(), std::io::Error> {
+        Self::move_caret_to(CaretPosition { column: 0, row })?;
+        Self::clear_line()?;
+        for part in annotated_string.into_iter() {
+            if let Some(a_type) = part.annotaion_type {
+                let atr = a_type.into();
+                Self::set_attribute(atr)?;
+            }
+            Self::print(&format!("{}", part.string))?;
+            Self::reset_color()?;
+        }
+        Ok(())
+    }
+
+    fn reset_color() -> Result<(), std::io::Error> {
+        Self::queue_command(ResetColor)?;
+        Ok(())
+    }
+
+    fn set_attribute(attribute: attribute::Attribute) -> Result<(), std::io::Error> {
+        if let Some(foreground) = attribute.foreground {
+            Self::queue_command(SetForegroundColor(foreground))?;
+        }
+
+        if let Some(background) = attribute.background {
+            Self::queue_command(SetBackgroundColor(background))?;
+        }
         Ok(())
     }
 

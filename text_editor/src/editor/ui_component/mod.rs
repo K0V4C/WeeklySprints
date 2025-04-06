@@ -1,4 +1,3 @@
-
 pub mod command_bar;
 pub mod message_bar;
 pub mod status_bar;

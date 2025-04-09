@@ -13,15 +13,17 @@ bigger ones (example: GameEngine), but most wont be that size.
 4. Huffman and Differential encoding example, sending data between threads for simulation
 5. KVM project where "system calls" are implemented for virtual machines where host machine is simulating operating system 
 6. Simple shell in Rust
+7. Terminal Text Editor
 
 
 #### Comming soon:
 
 1. Pacman clone with algorithm for player to autoplay
 2. Marching squares in rust + glfw
-3. Text Editor 
 
 #### Ideas:
 
 1. Build your own-X, more or less building everything from this repo
 2. GameEngine with Vulcan
+3. Torrent Client 
+4. Blockchain

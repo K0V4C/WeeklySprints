@@ -33,7 +33,7 @@ In the end final projects will be similar but I am more lazy and quality of this
 - 13 Added Highlihting
 - 13 Added Strategy Pattern for Highlighting
 - 13 Added different file types
-- 14 Finished 
+- 15 Finished 
 
 #### Bugs: 
 - *EMOJIS DONT WORK AND THEY HAVE TO GET FIXED*

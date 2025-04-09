@@ -6,7 +6,7 @@ pub struct DocumentStatus {
     pub file_name: Option<String>,
     pub number_of_lines: usize,
     pub is_modified: bool,
-    pub file_type: FileType
+    pub file_type: FileType,
 }
 
 impl DocumentStatus {

@@ -7,7 +7,7 @@ pub mod search_info;
 use std::cmp;
 
 use buffer::Buffer;
-use highlighter::{file_type::FileType, Highlighter};
+use highlighter::{Highlighter, file_type::FileType};
 use location::Location;
 use messages::Message;
 use search_info::SearchInfo;
@@ -99,17 +99,18 @@ impl View {
     }
 
     pub fn get_status(&self) -> DocumentStatus {
-
         let file_type = if let Some(file_name) = self.buffer.get_file_name() {
             file_name.into()
-        } else {FileType::None};
+        } else {
+            FileType::None
+        };
 
         DocumentStatus {
             caret_position: self.caret_position(),
             file_name: self.buffer.get_file_name(),
             number_of_lines: self.buffer.get_number_of_lines(),
             is_modified: self.buffer.is_modified(),
-            file_type
+            file_type,
         }
     }
 
@@ -141,7 +142,11 @@ impl View {
             .map(|x| x.search_query.to_string());
 
         let file_name = self.buffer.get_file_name();
-        let file_type: Option<FileType> = if let Some(file_name) = file_name {Some(file_name.into())} else {None};
+        let file_type: Option<FileType> = if let Some(file_name) = file_name {
+            Some(file_name.into())
+        } else {
+            None
+        };
         let mut highlighter = Highlighter::new(query, selected_match, file_type);
 
         // It has to be 0 here because of comment blocks
@@ -151,11 +156,8 @@ impl View {
             }
         }
 
-
         // This here can start from origin no problems
         for current_row in origin_y..end_y {
-
-
             let line_idx = current_row.saturating_add(top).saturating_sub(origin_y);
             let left = self.scroll_offset.column;
             let right = self.scroll_offset.column.saturating_add(width);

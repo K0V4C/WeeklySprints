@@ -177,7 +177,6 @@ impl Buffer {
         range: Range<usize>,
         highlighter: &Highlighter,
     ) -> Option<AnnotatedString> {
-        
         let annotations = highlighter.get_annotations(row);
 
         let line_string = match self.get_line(row) {

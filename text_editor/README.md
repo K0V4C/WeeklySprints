@@ -33,6 +33,7 @@ In the end final projects will be similar but I am more lazy and quality of this
 - 13 Added Highlihting
 - 13 Added Strategy Pattern for Highlighting
 - 13 Added different file types
+- 14 Finished 
 
 #### Bugs: 
 - *EMOJIS DONT WORK AND THEY HAVE TO GET FIXED*
@@ -55,6 +56,9 @@ In the end final projects will be similar but I am more lazy and quality of this
 - Figure out why I have to highlight whole file and not only 0..end_of_view
 - Save file in different name
 - Check if all highligting changes with file name change
+- Remove clippy errors
+- Add highlights to other file types
+- Search for bugs
 
 ### Credits
 

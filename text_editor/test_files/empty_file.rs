@@ -4,7 +4,8 @@ g
 search for guska
 aaaaaaaa
 111231                                                                                                    1
-                                                                                                          1
+
+u32 = 1+1 + 0x000 + 0000 + 0x123;                                                                                                          1
 abababababa
 
 opa opa opa

@@ -19,9 +19,14 @@ impl Annotation {
             annotation_type,
         }
     }
+
+    pub fn shift(&mut self, offset: ByteIdx) {
+        self.start_byte = self.start_byte.saturating_add(offset);
+        self.end_byte = self.end_byte.saturating_add(offset);
+    }
 }
 
-impl Display for Annotation{
+impl Display for Annotation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} {} \n", self.start_byte, self.end_byte)
     }

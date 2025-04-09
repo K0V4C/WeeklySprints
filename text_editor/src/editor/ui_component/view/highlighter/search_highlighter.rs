@@ -1,22 +1,28 @@
 use std::collections::HashMap;
 
-use crate::editor::{annotated_string::{annotation::Annotation, annotation_type::AnnotationType}, line::Line, ui_component::view::location::Location};
+use crate::editor::{
+    annotated_string::{annotation::Annotation, annotation_type::AnnotationType},
+    line::Line,
+    ui_component::view::location::Location,
+};
 
 use super::syntax_highlihter::SyntaxHighlighter;
 
-
-pub struct SearchHighlighter {    
+pub struct SearchHighlighter {
     matched_word: Option<String>,
     selected_match: Option<Location>,
     highlights: HashMap<usize, Vec<Annotation>>,
 }
 
-impl SearchHighlighter {    
-    
+impl SearchHighlighter {
     pub fn new(matched_word: Option<String>, selected_match: Option<Location>) -> Self {
-        SearchHighlighter { matched_word, selected_match, highlights: HashMap::new() }
+        SearchHighlighter {
+            matched_word,
+            selected_match,
+            highlights: HashMap::new(),
+        }
     }
-    
+
     fn highlight_matched_words(&self, line: &Line, result: &mut Vec<Annotation>) {
         if let Some(matched_word) = &self.matched_word {
             if matched_word.is_empty() {
@@ -62,7 +68,7 @@ impl SyntaxHighlighter for SearchHighlighter {
         }
         self.highlights.insert(idx, result);
     }
-    
+
     fn get_annotations(&self, idx: crate::editor::line::LineIdx) -> Option<&Vec<Annotation>> {
         self.highlights.get(&idx)
     }

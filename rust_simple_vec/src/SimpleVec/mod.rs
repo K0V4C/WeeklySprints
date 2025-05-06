@@ -29,11 +29,6 @@ impl<T> SimpleVec<T> {
     */
 
     pub fn new() -> Self {
-        assert!(
-            std::mem::size_of::<T>() != 0,
-            "We are not ready to handle ZSTs"
-        );
-
         SimpleVec {
             buf: RawVec::new(),
             len: 0,

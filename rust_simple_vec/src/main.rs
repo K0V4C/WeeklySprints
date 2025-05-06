@@ -1,5 +1,3 @@
 mod SimpleVec;
 
-fn main() {
-    
-}
+fn main() {}

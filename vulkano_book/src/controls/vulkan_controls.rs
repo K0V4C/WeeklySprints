@@ -95,4 +95,6 @@ pub fn setup(app: &mut App) {
     app.set_vs_and_fs(vs, fs);
     app.set_queue(queue);
     app.set_vertex_buffer(vertex_buffer);
+    app.set_device(device);
+    app.set_phyisical_device(physical_device);
 }

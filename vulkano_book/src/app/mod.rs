@@ -1,15 +1,9 @@
 use std::sync::Arc;
 
 use vulkano::{
-    buffer::Subbuffer,
-    command_buffer::{PrimaryAutoCommandBuffer, allocator::StandardCommandBufferAllocator},
-    device::{Device, Queue, physical::PhysicalDevice},
-    instance::Instance,
-    memory::allocator::StandardMemoryAllocator,
-    pipeline::{GraphicsPipeline, graphics::viewport::Viewport},
-    render_pass::{Framebuffer, RenderPass},
-    shader::ShaderModule,
-    swapchain::{Surface, Swapchain, SwapchainCreateInfo},
+    buffer::Subbuffer, command_buffer::{allocator::StandardCommandBufferAllocator, PrimaryAutoCommandBuffer}, device::{physical::PhysicalDevice, Device, Queue}, instance::Instance, memory::allocator::StandardMemoryAllocator, pipeline::{graphics::viewport::Viewport, GraphicsPipeline}, render_pass::{Framebuffer, RenderPass}, shader::ShaderModule, swapchain::{
+        self, acquire_next_image, Surface, Swapchain, SwapchainCreateInfo, SwapchainPresentInfo
+    }, sync::{self, GpuFuture}, Validated, VulkanError
 };
 use winit::{application::ApplicationHandler, event::WindowEvent, window::Window};
 
@@ -126,6 +120,10 @@ impl App {
         self.device = Some(device);
     }
 
+    pub fn set_phyisical_device(&mut self, physical_device: Arc<PhysicalDevice>) {
+        self.physical_device = Some(physical_device);
+    }
+    
     pub fn set_pipeline(&mut self, pipeline: Arc<GraphicsPipeline>) {
         self.pipeline = Some(pipeline);
     }
@@ -189,7 +187,6 @@ impl ApplicationHandler for App {
                 self.window_resized = true;
             }
             WindowEvent::RedrawRequested => {
-                
                 if self.recreate_swapchain {
                     self.recreate_swapchain = false;
 
@@ -230,6 +227,57 @@ impl ApplicationHandler for App {
                                 ));
                             }
                         }
+
+                        let (image_i, suboptimal, acquire_future) =
+                            match swapchain::acquire_next_image(
+                                self.swapchain.as_ref().unwrap().clone(),
+                                None,
+                            )
+                            .map_err(Validated::unwrap)
+                            {
+                                Ok(r) => r,
+                                Err(VulkanError::OutOfDate) => {
+                                    self.recreate_swapchain = true;
+                                    return;
+                                }
+                                Err(e) => panic!("failed to acqurie next image: {e}"),
+                            };
+                        
+                        if suboptimal {
+                            self.recreate_swapchain = true;
+                        }
+
+                        let execution = sync::now(self.device.as_ref().unwrap().clone())
+                            .join(acquire_future)
+                            .then_execute(
+                                self.queue.as_ref().unwrap().clone(),
+                                self.command_buffers.as_ref().unwrap().clone()[image_i as usize]
+                                    .clone(),
+                            )
+                            .unwrap()
+                            .then_swapchain_present(
+                                self.queue.as_ref().unwrap().clone(),
+                                SwapchainPresentInfo::swapchain_image_index(
+                                    self.swapchain.as_ref().unwrap().clone(),
+                                    image_i,
+                                ),
+                            )
+                            .then_signal_fence_and_flush();
+                        
+                            match execution.map_err(Validated::unwrap) {
+                                Ok(future) => {
+                                    // Wait for the GPU to finish.
+                                    future.wait(None).unwrap();
+                                }
+                                Err(VulkanError::OutOfDate) => {
+                                    self.recreate_swapchain = true;
+                                }
+                                Err(e) => {
+                                    println!("failed to flush future: {e}");
+                                }
+                            }
+                        
+                        
                     }
                 }
 

@@ -69,7 +69,7 @@ pub mod vertex_shader {
 }
 
 pub mod fragment_shader {
-    vulkano_shaders::shader!{
+    vulkano_shaders::shader! {
         ty: "fragment",
         src: r"
         

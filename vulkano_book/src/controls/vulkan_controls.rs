@@ -7,7 +7,6 @@ use vulkano::{
     device::DeviceExtensions,
     memory::allocator::StandardMemoryAllocator,
     pipeline::graphics::viewport::Viewport,
-    swapchain::Surface,
 };
 
 use crate::{

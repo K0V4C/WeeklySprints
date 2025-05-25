@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use vulkano::{
-    buffer::Subbuffer, command_buffer::{allocator::StandardCommandBufferAllocator, PrimaryAutoCommandBuffer}, device::{physical::PhysicalDevice, Device, Queue}, instance::Instance, memory::allocator::StandardMemoryAllocator, pipeline::{graphics::viewport::Viewport, GraphicsPipeline}, render_pass::{Framebuffer, RenderPass}, shader::ShaderModule, swapchain::{
-        self, acquire_next_image, Surface, Swapchain, SwapchainCreateInfo, SwapchainPresentInfo
+    buffer::Subbuffer, command_buffer::{allocator::StandardCommandBufferAllocator, PrimaryAutoCommandBuffer}, device::{physical::PhysicalDevice, Device, Queue}, image::ImageUsage, instance::Instance, memory::allocator::StandardMemoryAllocator, pipeline::{graphics::viewport::Viewport, GraphicsPipeline}, render_pass::{Framebuffer, RenderPass}, shader::ShaderModule, swapchain::{
+        self, Surface, Swapchain, SwapchainCreateInfo, SwapchainPresentInfo
     }, sync::{self, GpuFuture}, Validated, VulkanError
 };
 use winit::{application::ApplicationHandler, event::WindowEvent, window::Window};
@@ -68,7 +68,7 @@ impl App {
             physical_device: None,
             device: None,
 
-            recreate_swapchain: false,
+            recreate_swapchain: true,
             window_resized: false,
         }
     }
@@ -189,14 +189,14 @@ impl ApplicationHandler for App {
             WindowEvent::RedrawRequested => {
                 if self.recreate_swapchain {
                     self.recreate_swapchain = false;
-
+                    
                     let new_dimension = self.window.as_ref().unwrap().inner_size();
 
                     if let Some(x) = self.swapchain.as_ref() {
                         let (new_swapchain, new_images) = x
                             .recreate(SwapchainCreateInfo {
                                 image_extent: new_dimension.into(),
-                                ..Default::default()
+                                ..self.swapchain.as_ref().unwrap().create_info()
                             })
                             .expect("failed to recreate swapchain: {e}");
 
@@ -246,7 +246,7 @@ impl ApplicationHandler for App {
                         if suboptimal {
                             self.recreate_swapchain = true;
                         }
-
+                        
                         let execution = sync::now(self.device.as_ref().unwrap().clone())
                             .join(acquire_future)
                             .then_execute(

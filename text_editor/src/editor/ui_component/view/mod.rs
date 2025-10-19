@@ -23,7 +23,7 @@ use crate::editor::{
 
 use super::UiComponent;
 
-const EDITOR_NAME: &str = "HECTO";
+const EDITOR_NAME: &str = "editr";
 const EDITOR_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub struct View {

@@ -122,7 +122,7 @@ impl Editor {
             let _ = Terminal::set_title(name);
             view.load(name);
         } else {
-            let _ = Terminal::set_title("Hecto");
+            let _ = Terminal::set_title("editr");
         }
 
         // For now i will ignore everything past the file name
